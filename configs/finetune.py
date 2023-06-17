@@ -102,40 +102,26 @@ def get_backbone_config(config_string):
   pattern = r'^([A-Za-z0-9]+)?_?(\d+)?x?'
   searched = re.search(pattern, config_string)
   if not searched:
-    raise ValueError(f'Unrecognized config_string: {config_string}')
+      raise ValueError(f'Unrecognized config_string: {config_string}')
   added_backbone, n_repeat = searched.groups()
   print(f'Split config: {added_backbone}, {n_repeat}')
   processed_names = []
-  processed_handles = []
-  processed_signatures = []
-  processed_output_keys = []
+  processed_models = []
   input_sizes = tuple()
 
   if added_backbone in SINGLE_MODELS:
     n_repeat = int(n_repeat) if n_repeat else 1
     processed_names += [added_backbone] * n_repeat
-    handle, size = SINGLE_MODELS[added_backbone]
-    if isinstance(handle, list):
-      processed_handles = handle * n_repeat
-      processed_handles = processed_handles[:n_repeat]
-    else:
-      processed_handles += [handle] * n_repeat
-
-    if 'vit' in added_backbone:
-      processed_signatures += ['serving_default'] * n_repeat
-      processed_output_keys += ['pre_logits'] * n_repeat
-    else:
-      processed_signatures += ['representation'] * n_repeat
-      processed_output_keys += ['pre_logits'] * n_repeat
-    input_sizes += (size,) * n_repeat
+    model_name, input_size = SINGLE_MODELS[added_backbone]
+    processed_models += [model_name] * n_repeat
+    input_sizes += (input_size,) * n_repeat
   else:
     raise ValueError(f'added_backbone:{added_backbone} is not recognized')
 
+
   return ConfigDict({
       'names': processed_names,
-      'handles': processed_handles,
-      'signatures': processed_signatures,
-      'output_keys': processed_output_keys,
+      'models': processed_models,
       'input_sizes': input_sizes,
       'include_input': False,
       'additional_features': '',

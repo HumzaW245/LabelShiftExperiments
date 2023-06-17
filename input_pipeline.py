@@ -1,93 +1,84 @@
-import torchdata
-
+import functools
+import logging
 import torch
-import torchvision.transforms as transforms
-from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader, Subset
-
-class CachingDataset(torchdata.Dataset):
-    def __init__(self, dataset):
-        self.dataset = dataset
-        self.cache = {}
-    
-    def __getitem__(self, index):
-        if index not in self.cache:
-            self.cache[index] = self.dataset[index]
-        return self.cache[index]
-    
-    def __len__(self):
-        return len(self.dataset)
+import torchvision
+from torch.utils.data import DataLoader
 
 def _filter_to_k_shot(dataset, num_classes, k):
+    """Filters k-shot subset from a dataset."""
+    # Indices of included examples in the k-shot balanced dataset.
     keep_example = []
-    class_counts = torch.zeros(num_classes, dtype=torch.int32)
+    # Keep track of the number of examples per class included in `keep_example`.
+    class_counts = torch.zeros([num_classes], dtype=torch.int32)
     
     for _, label in dataset:
+        # If there are less than `k` examples of class `label` in `example_indices`,
+        # keep this example and update the class counts.
         keep = class_counts[label] < k
         keep_example.append(keep)
         if keep:
             class_counts[label] += 1
+        # When there are `k` examples for each class included in `keep_example`,
+        # stop searching.
         if (class_counts == k).all():
             break
     
-    indices = [i for i, keep in enumerate(keep_example) if keep]
-    dataset = Subset(dataset, indices)
-    
-    return dataset
+    return torch.utils.data.Subset(dataset, torch.nonzero(torch.tensor(keep_example)).squeeze())
 
 def create_vtab_dataset_balanced(dataset, image_size, batch_size, data_fraction):
-    assert dataset in VTAB_TASKS
-    num_classes = dloader.get_num_classes()
-    n_shots = max(int(1000 * data_fraction / num_classes), 1)
+    """Creates a VTAB dataset using torchvision.datasets for k-shot learning.
+
+    Args:
+        dataset: torchvision.datasets.Dataset, the dataset to use
+        image_size: int, size of the input images
+        batch_size: int, batch size for the data loaders
+        data_fraction: float, used to calculate the number of shots per class
+
+    Returns:
+        train_loader, test_loader: DataLoaders for the k-shot balanced dataset
+    """
+    num_classes = len(dataset.classes)
+    train_dataset = dataset(root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+    test_dataset = dataset(root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+
+    n_shots = max(int(len(1000) * data_fraction / num_classes), 1)
     logging.info('n_shots: %d', n_shots)
-    
-    transform = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.ToTensor(),
-        transforms.Normalize((-1.0,), (2.0,))
-    ])
-    
-    dataset = ImageFolder(root='path/to/dataset/trainval', transform=transform)
-    dataset = _filter_to_k_shot(dataset, num_classes, n_shots)
-    
-    dataset = CachingDataset(dataset)  # Wrap the dataset with caching
-    
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    
-    return dataloader
+
+    filtered_train_dataset = _filter_to_k_shot(train_dataset, num_classes, n_shots)
+    filtered_train_loader = DataLoader(filtered_train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+
+    return filtered_train_loader, test_loader
 
 def create_vtab_dataset(dataset, image_size, batch_size, mode, eval_mode='test', valid_fold_id=4):
-    assert 0 <= valid_fold_id < 5
-    if mode not in ('train', 'eval'):
-        raise ValueError("mode should be 'train' or 'eval'")
-    is_training = mode == 'train'
-    
-    transform = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.ToTensor(),
-        transforms.Normalize((-1.0,), (2.0,))
-    ])
-    
-    if eval_mode == 'test':
-        split_name = 'train800val200' if is_training else 'test'
-    elif eval_mode == 'valid':
-        val_start, val_end = valid_fold_id * 200, (valid_fold_id + 1) * 200
-        if is_training:
-            split_name = f'train[:{val_start}]+train[{val_end}:1000]'
-        else:
-            split_name = f'train[{val_start}:{val_end}]'
-        logging.info('Using split_name: %s', split_name)
+    """Creates a VTAB dataset using torchvision.datasets for training or evaluation.
+
+    Args:
+        dataset: torchvision.datasets.Dataset, the dataset to use
+        image_size: int, size of the input images
+        batch_size: int, batch size for the data loaders
+        mode: str, whether to build the input function for training or evaluation ('train' or 'eval')
+        eval_mode: str, whether to build the input functions for validation or test runs ('valid' or 'test')
+        valid_fold_id: int, valid fold ID for validation mode
+
+    Returns:
+        train_loader, eval_loader: DataLoaders for the VTAB dataset
+    """
+    train_dataset = dataset(root='./data', train=True, download=True, transform=torchvision.transforms.ToTensor())
+
+    if mode == 'train':
+        if eval_mode == 'valid':
+            val_start, val_end = valid_fold_id * 200, (valid_fold_id + 1) * 200
+            train_indices = list(range(val_start)) + list(range(val_end, len(train_dataset)))
+            train_dataset = torch.utils.data.Subset(train_dataset, train_indices)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        return train_loader
     else:
-        raise ValueError(f'eval_mode: {eval_mode} invalid')
-    
-    dataset = ImageFolder(root='path/to/dataset/trainval', transform=transform)
-    
-    if is_training:
-        indices = [i for i, (_, label) in enumerate(dataset) if i < val_start or i >= val_end]
-        dataset = Subset(dataset, indices)
-    
-    dataset = CachingDataset(dataset)  # Wrap the dataset with caching
-    
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    
-    return dataloader
+        if eval_mode == 'valid':
+            val_start, val_end = valid_fold_id * 200, (valid_fold_id + 1) * 200
+            eval_indices = list(range(val_start, val_end))
+            eval_dataset = torch.utils.data.Subset(train_dataset, eval_indices)
+        else:
+            eval_dataset = dataset(root='./data', train=False, download=True, transform=torchvision.transforms.ToTensor())
+        eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        return eval_loader
