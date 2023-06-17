@@ -1,7 +1,22 @@
+import torchdata
+
 import torch
 import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader, Subset
+
+class CachingDataset(torchdata.Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.cache = {}
+    
+    def __getitem__(self, index):
+        if index not in self.cache:
+            self.cache[index] = self.dataset[index]
+        return self.cache[index]
+    
+    def __len__(self):
+        return len(self.dataset)
 
 def _filter_to_k_shot(dataset, num_classes, k):
     keep_example = []
@@ -34,6 +49,8 @@ def create_vtab_dataset_balanced(dataset, image_size, batch_size, data_fraction)
     
     dataset = ImageFolder(root='path/to/dataset/trainval', transform=transform)
     dataset = _filter_to_k_shot(dataset, num_classes, n_shots)
+    
+    dataset = CachingDataset(dataset)  # Wrap the dataset with caching
     
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
@@ -68,6 +85,8 @@ def create_vtab_dataset(dataset, image_size, batch_size, mode, eval_mode='test',
     if is_training:
         indices = [i for i, (_, label) in enumerate(dataset) if i < val_start or i >= val_end]
         dataset = Subset(dataset, indices)
+    
+    dataset = CachingDataset(dataset)  # Wrap the dataset with caching
     
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
