@@ -11,6 +11,8 @@ from torchvision import datasets, transforms
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
 def train(model, device, train_loader, optimizer, epoch, display=True):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):

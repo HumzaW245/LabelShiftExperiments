@@ -5,9 +5,9 @@ import torch.nn as nn
 import torch
 import numpy as np
 import input_pipeline as pipeLine
+import configs.config as config
 
-
-def evaluate(datasetName, finetune_backbone=False):
+def evaluate(config):
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
   print(device) # you will really need gpu's for this part
@@ -17,26 +17,52 @@ def evaluate(datasetName, finetune_backbone=False):
 
   accs = []
 
-
+  learningConfig = config.learning
   # Load the pre-trained ResNet-50 model
-  model = linearFT.Net(datasetName, finetune_backbone)
+  model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)
 
 
+  if learningConfig.optimizer == 'adam':
+    optimizer = torch.optim.Adam(
+      model.parameters(), 
+      lr=learningConfig.learning_rate, 
+      weight_decay=learningConfig.weight_decay
+      )
+  elif learningConfig.optimizer == 'SGD':
+    optimizer = torch.optim.SGD(
+      model.parameters(), 
+      lr=learningConfig.learning_rate, 
+      weight_decay=learningConfig.weight_decay, 
+      momentum=learningConfig.momentum
+      )
 
-  optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+  else:
+    raise ValueError("the config optimizer used is not supported. Needs to be defined where others are defined like SGD and adam.")
 
   model.to(device)
   print("\n\n\n")
   print(device)
   print("\n\n\n")
 
-  for epoch in range(5):
-    trainTest.train(model, device, pipeLine.train_loader, optimizer, epoch, display=True)
 
-  accs.append(trainTest.test(model, device, pipeLine.test_dataloader))
+  #Get dataloaders
+  train_loader, test_loader = pipeLine.getTrainTestLoaders(config)
+
+
+  for epoch in range(learningConfig.epochs):
+    trainTest.train(model, device, train_loader, optimizer, epoch, display=config.printTraining)
+
+  accs.append(trainTest.test(model, device, test_loader))
 
   accs = np.array(accs)
-  print('Acc over 1 instances: %.2f +- %.2f'%(accs.mean(),accs.std()))
+  print(f'Accuracy: {accs.mean()}')
 
 
-evaluate('SVHN', finetune_backbone=False)
+'''
+Executing Run (optional: with a custom config)
+'''
+
+#custom_config = 'learning_rate=0.1, epochs=2, train_batch_size=32, printTraining=True'
+config = config.get_config("")
+
+evaluate(config)

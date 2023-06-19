@@ -4,7 +4,7 @@ import configs.helper as helper
 import torchvision.models as models
 
 class Net(torch.nn.Module):
-    def __init__(self, datasetName, finetune_backbone):
+    def __init__(self, datasetName, finetune_backbones):
         super(Net, self).__init__()
         
         # Dataset
@@ -14,8 +14,8 @@ class Net(torch.nn.Module):
         
 
         # FT backbone
-        self.finetune_backbone = finetune_backbone
-        if self.finetune_backbone == False:
+        self.finetune_backbones = finetune_backbones
+        if self.finetune_backbones == False:
           helper.freezeBackbone(self.model)
           
 
