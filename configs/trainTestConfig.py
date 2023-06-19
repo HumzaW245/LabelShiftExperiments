@@ -1,4 +1,4 @@
-import torchvision.models as models
+
 
 from numpy.random import RandomState
 import numpy as np
