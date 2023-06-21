@@ -1,6 +1,7 @@
 import configs.helper as helper
 import configs.trainTestConfig as trainTest
 import models.LinearFT as linearFT
+import models.Head2Toe as h2t
 import torch.nn as nn
 import torch
 import numpy as np
@@ -25,7 +26,12 @@ def evaluate(config):
 
   learningConfig = config.learning
   # Load the pre-trained ResNet-50 model
-  model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)
+  
+  if(learningConfig.useH2T): 
+    model = h2t.Net(config.dataset, learningConfig.finetune_backbones)
+  else:
+    model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)
+
 
 
   if learningConfig.optimizer == 'adam':

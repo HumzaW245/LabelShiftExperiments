@@ -9,6 +9,7 @@ def get_config(config_string):
         'printTraining': True,
         'runTypeNameForWandB': '(No name given to run)',
         'learning': ConfigDict({
+            'useH2T': True,
             'optimizer': 'adam',
             'learning_rate': 0.1,
             'weight_decay': 0,
