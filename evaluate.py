@@ -6,8 +6,14 @@ import torch
 import numpy as np
 import input_pipeline as pipeLine
 import configs.config as config
+import wandb
 
 def evaluate(config):
+  
+  wandb.login()
+  #------------------------------------------------------>INITIALIZING WANDB PROJECT NAME AND NAME OF RUN <--------------------------------------------------
+  wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
+
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
   print(device) # you will really need gpu's for this part
