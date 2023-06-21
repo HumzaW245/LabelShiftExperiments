@@ -1,4 +1,4 @@
-import torchvision.models as models
+
 
 from numpy.random import RandomState
 import numpy as np
@@ -11,6 +11,8 @@ from torchvision import datasets, transforms
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import wandb
+
 def train(model, device, train_loader, optimizer, epoch, display=True):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -20,6 +22,10 @@ def train(model, device, train_loader, optimizer, epoch, display=True):
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
+
+        #Wandb logging
+        wandb.log({"Train Loss Per Batch": loss.item()})
+
     if display:
       print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
           epoch, batch_idx * len(data), len(train_loader.dataset),
@@ -33,12 +39,20 @@ def test(model, device, test_loader):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            test_loss += F.cross_entropy(output, target, size_average=False).item() # sum up batch loss
+            test_lossBatch = F.cross_entropy(output, target, size_average=False).item()        
+            test_lossEpoch += test_lossBatch # sum up batch loss
             pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
+            
+            #Wandb logging
+            wandb.log({"Test Loss Per Batch": test_lossBatch})
 
-    test_loss /= len(test_loader.dataset)
+    test_lossEpoch /= len(test_loader.dataset)
+    accuracyTest = 100. * correct / len(test_loader.dataset)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
-    return 100. * correct / len(test_loader.dataset)
+        test_lossEpoch, correct, len(test_loader.dataset),
+        accuracyTest))
+
+    #Wandb logging
+    wandb.log({"Test Loss Per Epoch": test_lossEpoch, "Test Accuracy Per Epoch": accuracyTest})
+    return accuracyTest
