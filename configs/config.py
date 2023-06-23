@@ -16,7 +16,7 @@ def get_config(config_string):
             'momentum': 0,
             #'l1_regularizer': 0.,
             #'l2_regularizer': 0.,
-            'epochs': 10,
+            'epochs': 3,
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
             'finetune_backbones': False,

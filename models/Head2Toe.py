@@ -3,6 +3,16 @@ import torch.nn as nn
 import configs.helper as helper
 import torchvision.models as models
 
+
+'''
+
+Refer to https://pytorch.org/vision/0.8/_modules/torchvision/models/resnet.html for what each layer is doing. 
+
+
+
+For example, the flatten is not a layer so have to do it ourselves at layer 9 in forward pass. Search "x = torch.flatten(x, 1)" in the link
+
+'''
 class Net(torch.nn.Module):
     def __init__(self, datasetName, finetune_backbones):
         super(Net, self).__init__()
@@ -27,11 +37,20 @@ class Net(torch.nn.Module):
         self.model.fc = classifier
 
         # Get the layers of the model
-        self.layers = list(self.model.children()) #Use .modules() instead of .children() if want to also access layers within layers. (nested layers) since children() looks at layers but there may be a sequential layer among these which contains other layers. to access the nested sequential layer, modules() is more appropriate
+        
+        #self.features = nn.Sequential(*list(self.model.children()))
+        #self.layers = list(self.model.children()) #Use .modules() instead of .children() if want to also access layers within layers. (nested layers) since children() looks at layers but there may be a sequential layer among these which contains other layers. to access the nested sequential layer, modules() is more appropriate
 
     def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
+        for idx, module in enumerate(self.model.children()):
+            if idx ==  9: #The flatten is not a layer so have to do it ourselves here. Search "x = torch.flatten(x, 1)" in https://pytorch.org/vision/0.8/_modules/torchvision/models/resnet.html
+                #print(f"Reached Layer {idx} so flattening tensor")
+                # Flatten the output tensor
+                x = torch.flatten(x, 1)
+            
+            x = module(x)
+            #print(f"Layer #: {idx} and module name is {module}")
+            #print(f"Layer output shape: {x.shape}")
         return x
 
 
