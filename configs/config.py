@@ -20,6 +20,7 @@ def get_config(config_string):
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
             'finetune_backbones': False,
+            'target_size': 2048,
             #'finetune_lr_multiplier': 1.,
             #'finetune_steps_multiplier': 1.,
             #'feature_normalization': 'unit_vector',

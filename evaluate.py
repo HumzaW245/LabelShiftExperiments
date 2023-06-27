@@ -28,7 +28,7 @@ def evaluate(config):
   # Load the pre-trained ResNet-50 model
   
   if(learningConfig.useH2T): 
-    model = h2t.Net(config.dataset, learningConfig.finetune_backbones)
+    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, layers=["all-ChangeToLayerNamesAndUncommentIfConditionInself.model.named_modules()Loop"])
   else:
     model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)
 
