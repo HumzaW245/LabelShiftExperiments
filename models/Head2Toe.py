@@ -3,7 +3,6 @@ import torch.nn as nn
 import configs.helper as helper
 import torchvision.models as models
 
-
 '''
 See example 2: https://medium.com/the-dl/how-to-use-pytorch-hooks-5041d777f904
 
@@ -34,7 +33,8 @@ class Net(torch.nn.Module):
 
 
         # Apply adaptive pooling to resize the tensor
-        self.adaptive_pool = nn.AdaptiveAvgPool1d(self.targetSize)
+        self.adaptive_pool1D = nn.AdaptiveAvgPool1d(self.targetSize)
+        self.adaptive_pool2D = nn.AdaptiveAvgPool2d(self.targetSize)
 
         #New output head
         targetTaskOutFeatures = helper.numUniqueClasses(datasetName) # num of classes in target task
@@ -60,7 +60,7 @@ class Net(torch.nn.Module):
         concatenated_features = self.getConcatenatedLayer(selected_features) #This is flattening everything passed starting from dim 1 (see definition)
         
         
-        #print(f'shape of concatenated layer BEFORE PASSING THROUGH OUTPUT HEAD {concatenated_features.shape}')
+        print(f'shape of concatenated layer BEFORE PASSING THROUGH OUTPUT HEAD {concatenated_features.shape}')
         x = self.newOutputHead(concatenated_features)
 
         return x
@@ -78,8 +78,8 @@ class Net(torch.nn.Module):
     '''
     def save_outputs_hook(self, layer_id: str) -> Callable:
         def fn(module, input, output):
-            print(f'layer name is {layer_id}')
-            print(f'layer output shape is {output.shape}')
+            #print(f'layer name is {layer_id}')
+            #print(f'layer output shape is {output.shape}')
             self._layersChosen[layer_id] = output            # Can use this if want to store the name passed in a dictionary with key = name value = output
             #print("Appending to layers chosen list")
             #self._layersChosen.append(output)
@@ -143,6 +143,42 @@ class Net(torch.nn.Module):
       target_size = self.targetSize
 
       all_features = []
+
+      for key, output in selected_features.items():
+
+        #2-D Strided pooling when shape is [batch_size, channels, height, width]
+        if len(output.shape) == 4: 
+          _, channels, height, width = output.shape #Channels first in pytorch
+
+          output = self.adaptive_pool2D(output)
+          output = output.flatten(start_dim=1)
+          print(f'flattened shape for 2d: {output.shape}')
+
+          
+          all_features.append(output)
+
+
+        #1-D Strided pooling when shape is [batch_size, channels, channelFeatures]
+        elif len(output.shape) == 3: 
+          _, channels, n_features = output.shape #Channels first in pytorch
+
+          output = self.adaptive_pool1D(output)
+          output = output.flatten(start_dim=1)
+          print(f'flattened shape for 1d: {output.shape}')
+
+          all_features.append(output)
+
+        #No pooling when shape is [batch_size, features]
+        elif len(output.shape) == 2: 
+          all_features.append(output)
+
+        else:
+          raise ValueError(
+              f'Output tensor: {key} with shape {output.shape} not 2D or 4D.')
+      '''
+      BELOW: This was meant for when pool size needs to be calculated  when there is no target size given ---> So when target size is given, just applying adaptive pooling so commenting out below for now
+      '''
+      '''
       for key, output in selected_features.items():
 
         #2-D Strided pooling when shape is [batch_size, channels, height, width]
@@ -167,6 +203,7 @@ class Net(torch.nn.Module):
 
           #output = torch.nn.functional.normalize(output, p=2, dim=1)
           #print(f'after shape {output.mean()}')
+          print(f'poolsize is {pool_size}')
           all_features.append(output)
 
 
@@ -188,6 +225,7 @@ class Net(torch.nn.Module):
           else:
               # Global pool
               output = torch.mean(output, dim=[2]) #dim 2 here since tf uses channels last. Basically want dimension of features which is at dim = 2 [batch_size, channels, channelFeatures]
+          print(f'poolsize is {pool_size}')
           all_features.append(output)
 
         #No pooling when shape is [batch_size, features]
@@ -197,7 +235,7 @@ class Net(torch.nn.Module):
         else:
           raise ValueError(
               f'Output tensor: {key} with shape {output.shape} not 2D or 4D.')
-
+      '''
 
       '''
       The flatten_and_concat function says its supposed to summarize into a single feature vector
@@ -244,7 +282,7 @@ class Net(torch.nn.Module):
   
 
       #Apply adaptive pooling to resize the tensor
-      pooled_concatenatedLayer = self.adaptive_pool(concatenatedLayer)  #Pass through adaptive pooling layer to change size to target size
+      pooled_concatenatedLayer = self.adaptive_pool1D(concatenatedLayer)  #Pass through adaptive pooling layer to change size to target size
       
 
       #Normalize
