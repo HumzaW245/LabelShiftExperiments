@@ -25,6 +25,7 @@ def train(model, device, train_loader, optimizer, epoch, display=True):
 
         #Wandb logging
         wandb.log({"Train Loss Per Batch": loss.item()})
+        torch.cuda.empty_cache() # Necessary for efficiency and cuda errors. Maybe even put somewhere in train function for each batch
 
     if display:
       print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -33,7 +34,7 @@ def train(model, device, train_loader, optimizer, epoch, display=True):
 
 def test(model, device, test_loader):
     model.eval()
-    test_loss = 0
+    test_lossEpoch = 0
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
@@ -46,6 +47,7 @@ def test(model, device, test_loader):
             
             #Wandb logging
             wandb.log({"Test Loss Per Batch": test_lossBatch})
+            torch.cuda.empty_cache() # Necessary for efficiency and cuda errors. Maybe even put somewhere in train function for each batch
 
     test_lossEpoch /= len(test_loader.dataset)
     accuracyTest = 100. * correct / len(test_loader.dataset)
