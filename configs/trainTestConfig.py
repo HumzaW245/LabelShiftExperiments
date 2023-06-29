@@ -13,13 +13,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 import wandb
 
-def train(model, device, train_loader, optimizer, epoch, display=True):
+def train(model, device, train_loader, optimizer, epoch, learningConfig, display=True):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
-        loss = F.cross_entropy(output, target)
+
+        #Only for H2T Phase 1 this is used to get scores
+        if model.inScoreCalcPhase: #loss = CEloss + coef * norm(norm(x, ord=r, axis=1), ord=p)`
+            coefLambda = learningConfig.group_lrp_regularizer_coef
+            regularization_loss = model.group_lasso_regularization()
+            loss = F.cross_entropy(output, target) + coefLambda * regularization_loss
+
+        else:
+            loss = F.cross_entropy(output, target)
+
         loss.backward()
         optimizer.step()
 

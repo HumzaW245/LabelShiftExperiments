@@ -14,9 +14,12 @@ from typing import Dict, Iterable, Callable
 from torch import Tensor
 import math
 class Net(torch.nn.Module):
-    def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, layers: Iterable[str]):
+    def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices):
         super(Net, self).__init__()
         self.model = models.resnet50(pretrained=True)
+
+        self.selected_feature_indices = selected_feature_indices
+        self.inScoreCalcPhase = inScoreCalcPhase
 
         #in_features = self.model.fc.in_features #The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True) so storing the 2048 and replacing this to map from 2048 to numClasses for target task ====can see the fc layer like this: backbone = models.resnet50(pretrained=True) => print(backbone.fc)
         
@@ -33,27 +36,24 @@ class Net(torch.nn.Module):
         if(self.finetune_backbone == False):
           helper.freezeBackbone(self.model)
 
-
-
-
-
         # Apply adaptive pooling to resize the tensor
         self.adaptive_pool1D = nn.AdaptiveAvgPool1d(self.targetSize)
         self.adaptive_pool2D = nn.AdaptiveAvgPool2d(self.targetSize)
 
         #New output head
         targetTaskOutFeatures = helper.numUniqueClasses(datasetName) # num of classes in target task
-        self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
+        
+        if self.inScoreCalcPhase == False: #so if in 2nd phase, incoming features is # selected_indices
+          self.newOutputHead = nn.Linear(len(self.selected_feature_indices), targetTaskOutFeatures, bias=True)  # Create a new classifier
+        else:
+          self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
 
 
         #Forward hook setup to store intermediate outputs of chosen layers/features
-        self.layers = layers
         self._layersChosen = {}
 
         for name, module in self.model.named_modules():
-            #if name in self.layers:
-              #print(f'layer name is {name}')
-              module.register_forward_hook(self.save_outputs_hook(name)) #Name is what the layer_id is in save_outputs_hook...usually forward hooks are not callable so just have (Self, module, input, output) but here a function with those is defined so it can call with passed argument
+          module.register_forward_hook(self.save_outputs_hook(name)) #Name is what the layer_id is in save_outputs_hook...usually forward hooks are not callable so just have (Self, module, input, output) but here a function with those is defined so it can call with passed argument
 
     def forward(self, x): 
         fwdPassBeforeClassifier = self.model(x)
@@ -64,9 +64,19 @@ class Net(torch.nn.Module):
         #Concatenated Layer for classifier
         concatenated_features = self.getConcatenatedLayer(selected_features) #This is flattening everything passed starting from dim 1 (see definition)
         
+        if self.inScoreCalcPhase == False: #So if in 2nd phase and have indices
+          print(f'shape in 2nd phase before selecting features {concatenated_features.shape}')
+          print(f'selected feature indices are {self.selected_feature_indices}')
+          concatenated_features = concatenated_features[:, self.selected_feature_indices]
+          print(f'shape in 2nd phase AFTER selecting features {concatenated_features.shape}')
         
         #print(f'shape of concatenated layer BEFORE PASSING THROUGH OUTPUT HEAD {concatenated_features.shape}')
         x = self.newOutputHead(concatenated_features)
+        ######################################################
+        ######################################################
+        # WILL HAVE A NEW 'CONCAT LAYER SIZE' TO ENTER IN CONFIG SINCE ONLY USED IN 2ND PHASE AND SUBSET OF FEATURES USED
+        ######################################################
+        ######################################################
 
         return x
 
@@ -86,8 +96,6 @@ class Net(torch.nn.Module):
             #print(f'layer name is {layer_id}')
             #print(f'layer output shape is {output.shape}')
             self._layersChosen[layer_id] = output            # Can use this if want to store the name passed in a dictionary with key = name value = output
-            #print("Appending to layers chosen list")
-            #self._layersChosen.append(output)
         return fn
 
 
@@ -295,3 +303,20 @@ class Net(torch.nn.Module):
       #print(f'AFTER Adaptive pooling and normalization, shape of final concatenated layer {final_concatenatedLayer.shape}')
       return final_concatenatedLayer
       '''
+
+      
+    def group_lasso_regularization(self): #regularizer_loss = norm(norm(x, ord=r, axis=1), ord=p)`
+      w_all = self.getOutputHeadLayerWeights() #Shape is [out_features, in_features] so first norm over out_features
+      score_i = torch.norm(w_all, p=2, dim=0) #score_i is basically a l2 norm (p=2 means l2 norm)
+      #print(f'score_i is feature i score and shape is: {score_i.shape}')
+      regularization_loss = torch.norm(score_i, p=1) #p=1 means l1 norm
+      return regularization_loss
+
+    def setToScoreCalcPhase(self, boolVal):
+      self.inScoreCalcPhase = boolVal
+      
+    def setFinetuneBackbone(self, boolVal):
+      self.finetune_backbone = boolVal
+
+    def getOutputHeadLayerWeights(self):
+      return self.newOutputHead.weight

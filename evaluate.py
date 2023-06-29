@@ -28,7 +28,8 @@ def evaluate(config):
   # Load the pre-trained ResNet-50 model
   
   if(learningConfig.useH2T): 
-    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, learningConfig.concatLayerSize, layers=["all-ChangeToLayerNamesAndUncommentIfConditionInself.model.named_modules()Loop"])
+    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, learningConfig.concatLayerSize, True, None)
+    model.setFinetuneBackbone(False) #This is the initialization of phase1 to calculate scores so we don't use finetuning in this step
   else:
     model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)
 
@@ -60,14 +61,25 @@ def evaluate(config):
   #Get dataloaders
   train_loader, test_loader = pipeLine.getTrainTestLoaders(config)
 
+  if learningConfig.useH2T: #Phase 1 to get scores and top scores as indices for phase2 to use as linear head
+    for epoch in range(learningConfig.epochs):
+      trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+    
+    outputHeadWeights = model.getOutputHeadLayerWeights()
+    scores = helper.getScoresAfterTrainingWithGroupLRP(outputHeadWeights)
+    print(f'This the scores matrix shape after phase 1: {scores.shape}') #Take indices of top F% and pass as indices in 2nd phase
+    
+    #Initializing another model and using selected_feature_indices
+    selected_feature_indices = helper.getIndicesOfTopFscores(learningConfig.fraction_F, scores)
+    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, learningConfig.concatLayerSize, False, selected_feature_indices)
 
   for epoch in range(learningConfig.epochs):
-    trainTest.train(model, device, train_loader, optimizer, epoch, display=config.printTraining)
+    trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
 
-  accs.append(trainTest.test(model, device, test_loader))
+    accs.append(trainTest.test(model, device, test_loader))
 
-  accs = np.array(accs)
-  print(f'Accuracy: {accs.mean()}')
+    accs = np.array(accs)
+    print(f'Accuracy: {accs.mean()}')
 
 
 '''
