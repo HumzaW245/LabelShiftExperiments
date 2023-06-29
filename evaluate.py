@@ -20,23 +20,17 @@ def evaluate(config):
   print(device) # you will really need gpu's for this part
 
 
-
+  #Get dataloaders
+  train_loader, test_loader = pipeLine.getTrainTestLoaders(config)
 
   accs = []
 
   learningConfig = config.learning
   # Load the pre-trained ResNet-50 model
   
-  if(learningConfig.useH2T): 
+  if(learningConfig.useH2T): #Phase 1 to get scores and top scores as indices for phase2 to use as linear head
     model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, learningConfig.concatLayerSize, True, None)
     model.setFinetuneBackbone(False) #This model is the initialization of phase1 to calculate scores so we don't use finetuning in this step
-  else:
-    model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)
-
-  #Get dataloaders
-  train_loader, test_loader = pipeLine.getTrainTestLoaders(config)
-
-  if learningConfig.useH2T: #Phase 1 to get scores and top scores as indices for phase2 to use as linear head
     optimizer = helper.getOptimizer(model, learningConfig)
     model.to(device)
     for epoch in range(learningConfig.epochs):
@@ -52,8 +46,11 @@ def evaluate(config):
     print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
     model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices)
     print(f'\n\n PHASE 1 COMPLETE --- Selected features have size {selected_feature_indices.shape} and are {selected_feature_indices}')
-    
+
+  else:
+    model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)    
   
+  #This will either be the 2nd model with select features optimizer OR if it is a Linear/FT run, it will be the optimizer for that. Cannot put this inside the else condition above
   optimizer = helper.getOptimizer(model, learningConfig)  
   model.to(device)
   print(f"\n\n\n {device} \n\n\n")
