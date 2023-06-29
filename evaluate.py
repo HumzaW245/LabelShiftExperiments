@@ -29,49 +29,34 @@ def evaluate(config):
   
   if(learningConfig.useH2T): 
     model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, learningConfig.concatLayerSize, True, None)
-    model.setFinetuneBackbone(False) #This is the initialization of phase1 to calculate scores so we don't use finetuning in this step
+    model.setFinetuneBackbone(False) #This model is the initialization of phase1 to calculate scores so we don't use finetuning in this step
   else:
     model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)
-
-
-
-  if learningConfig.optimizer == 'adam':
-    optimizer = torch.optim.Adam(
-      model.parameters(), 
-      lr=learningConfig.learning_rate, 
-      weight_decay=learningConfig.weight_decay
-      )
-  elif learningConfig.optimizer == 'SGD':
-    optimizer = torch.optim.SGD(
-      model.parameters(), 
-      lr=learningConfig.learning_rate, 
-      weight_decay=learningConfig.weight_decay, 
-      momentum=learningConfig.momentum
-      )
-
-  else:
-    raise ValueError("the config optimizer used is not supported. Needs to be defined where others are defined like SGD and adam.")
-
-  model.to(device)
-  print("\n\n\n")
-  print(device)
-  print("\n\n\n")
-
 
   #Get dataloaders
   train_loader, test_loader = pipeLine.getTrainTestLoaders(config)
 
   if learningConfig.useH2T: #Phase 1 to get scores and top scores as indices for phase2 to use as linear head
+    optimizer = helper.getOptimizer(model, learningConfig)
+    model.to(device)
     for epoch in range(learningConfig.epochs):
       trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
     
     outputHeadWeights = model.getOutputHeadLayerWeights()
-    scores = helper.getScoresAfterTrainingWithGroupLRP(outputHeadWeights)
+    scores = helper.getScoresAfterTrainingWithGroupLRP(device, outputHeadWeights)
     print(f'This the scores matrix shape after phase 1: {scores.shape}') #Take indices of top F% and pass as indices in 2nd phase
     
     #Initializing another model and using selected_feature_indices
-    selected_feature_indices = helper.getIndicesOfTopFscores(learningConfig.fraction_F, scores)
-    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, learningConfig.concatLayerSize, False, selected_feature_indices)
+    selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
+    newConcatLayerSize = len(selected_feature_indices)
+    print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
+    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices)
+    print(f'\n\n PHASE 1 COMPLETE --- Selected features have size {selected_feature_indices.shape} and are {selected_feature_indices}')
+    
+  
+  optimizer = helper.getOptimizer(model, learningConfig)  
+  model.to(device)
+  print(f"\n\n\n {device} \n\n\n")
 
   for epoch in range(learningConfig.epochs):
     trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)

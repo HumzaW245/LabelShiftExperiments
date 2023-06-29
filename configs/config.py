@@ -14,11 +14,11 @@ def get_config(config_string):
             'learning_rate': 0.1,
             'weight_decay': 0,
             'momentum': 0,
-            'fraction_F': 1,
+            'fraction_F': 0.1,
             'group_lrp_regularizer_coef': 0.,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it
-            'epochs': 3,
+            'epochs': 1,
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
             'finetune_backbones': False,

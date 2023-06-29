@@ -65,10 +65,10 @@ class Net(torch.nn.Module):
         concatenated_features = self.getConcatenatedLayer(selected_features) #This is flattening everything passed starting from dim 1 (see definition)
         
         if self.inScoreCalcPhase == False: #So if in 2nd phase and have indices
-          print(f'shape in 2nd phase before selecting features {concatenated_features.shape}')
-          print(f'selected feature indices are {self.selected_feature_indices}')
+          #print(f'shape in 2nd phase before selecting features {concatenated_features.shape}')
+          #print(f'selected feature indices has size {self.selected_feature_indices.shape} and are {self.selected_feature_indices}')
           concatenated_features = concatenated_features[:, self.selected_feature_indices]
-          print(f'shape in 2nd phase AFTER selecting features {concatenated_features.shape}')
+          #print(f'shape in 2nd phase AFTER selecting features {concatenated_features.shape}')
         
         #print(f'shape of concatenated layer BEFORE PASSING THROUGH OUTPUT HEAD {concatenated_features.shape}')
         x = self.newOutputHead(concatenated_features)
