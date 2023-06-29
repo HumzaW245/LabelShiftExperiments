@@ -14,13 +14,18 @@ from typing import Dict, Iterable, Callable
 from torch import Tensor
 import math
 class Net(torch.nn.Module):
-    def __init__(self, datasetName, finetune_backbone, targetSize, layers: Iterable[str]):
+    def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, layers: Iterable[str]):
         super(Net, self).__init__()
         self.model = models.resnet50(pretrained=True)
 
         #in_features = self.model.fc.in_features #The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True) so storing the 2048 and replacing this to map from 2048 to numClasses for target task ====can see the fc layer like this: backbone = models.resnet50(pretrained=True) => print(backbone.fc)
-
+        
+        #Target size is use for pooling of each layer, NOT the final "in_features" value of the Linear layer (output head)
         self.targetSize = targetSize #See comment above...2048 for now used since testing with fc layer as concatenated layer (The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True))
+
+        
+        #Size of output head
+        self.concatLayerSize = concatLayerSize #See comment above...2048 for now used since testing with fc layer as concatenated layer (The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True))
 
         self.model.fc = nn.Identity()  # Replace the classifier layer with Identity since classifier will be separately applied after features chosen are extracted (See forward function)
 
@@ -38,7 +43,7 @@ class Net(torch.nn.Module):
 
         #New output head
         targetTaskOutFeatures = helper.numUniqueClasses(datasetName) # num of classes in target task
-        self.newOutputHead = nn.Linear(self.targetSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
+        self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
 
 
         #Forward hook setup to store intermediate outputs of chosen layers/features
@@ -60,7 +65,7 @@ class Net(torch.nn.Module):
         concatenated_features = self.getConcatenatedLayer(selected_features) #This is flattening everything passed starting from dim 1 (see definition)
         
         
-        print(f'shape of concatenated layer BEFORE PASSING THROUGH OUTPUT HEAD {concatenated_features.shape}')
+        #print(f'shape of concatenated layer BEFORE PASSING THROUGH OUTPUT HEAD {concatenated_features.shape}')
         x = self.newOutputHead(concatenated_features)
 
         return x
@@ -143,7 +148,7 @@ class Net(torch.nn.Module):
       target_size = self.targetSize
 
       all_features = []
-
+      '''
       for key, output in selected_features.items():
 
         #2-D Strided pooling when shape is [batch_size, channels, height, width]
@@ -176,9 +181,11 @@ class Net(torch.nn.Module):
           raise ValueError(
               f'Output tensor: {key} with shape {output.shape} not 2D or 4D.')
       '''
+
+      '''
       BELOW: This was meant for when pool size needs to be calculated  when there is no target size given ---> So when target size is given, just applying adaptive pooling so commenting out below for now
       '''
-      '''
+      
       for key, output in selected_features.items():
 
         #2-D Strided pooling when shape is [batch_size, channels, height, width]
@@ -201,9 +208,6 @@ class Net(torch.nn.Module):
               output = torch.mean(output, dim=[2, 3]) #dim 2, 3 here since tf uses channels last. Basically want dimension of features which is height and width dimensions ->dims 2, 3 -> [batch_size, channels, height, width]
               
 
-          #output = torch.nn.functional.normalize(output, p=2, dim=1)
-          #print(f'after shape {output.mean()}')
-          print(f'poolsize is {pool_size}')
           all_features.append(output)
 
 
@@ -225,7 +229,7 @@ class Net(torch.nn.Module):
           else:
               # Global pool
               output = torch.mean(output, dim=[2]) #dim 2 here since tf uses channels last. Basically want dimension of features which is at dim = 2 [batch_size, channels, channelFeatures]
-          print(f'poolsize is {pool_size}')
+          
           all_features.append(output)
 
         #No pooling when shape is [batch_size, features]
@@ -235,7 +239,7 @@ class Net(torch.nn.Module):
         else:
           raise ValueError(
               f'Output tensor: {key} with shape {output.shape} not 2D or 4D.')
-      '''
+      
 
       '''
       The flatten_and_concat function says its supposed to summarize into a single feature vector
@@ -261,7 +265,7 @@ class Net(torch.nn.Module):
       #concatenating into one tensor
       concatenatedFeatures = torch.cat(all_features, dim=1) #Concatenating flattened layers 
 
-      print(f'shape of concatenated layer {concatenatedFeatures.shape}')
+      #print(f'shape of concatenated layer {concatenatedFeatures.shape}')
       return concatenatedFeatures          
         
       #OLD approach below
