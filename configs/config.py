@@ -5,25 +5,25 @@ def get_config(config_string):
     train_batch_size = 128
     eval_batch_size = 50
     config = ConfigDict({
-        'dataset': 'SVHN',
+        'dataset': 'Flowers102',
         'printTraining': True,
         'runTypeNameForWandB': '(No name given to run)',
         'learning': ConfigDict({
             'useH2T': True,
             'optimizer': 'adam',
-            'learning_rate': 0.1,
+            'learning_rate': 0.01,
             'weight_decay': 0,
             'momentum': 0,
             'fraction_F': 0.1,
-            'group_lrp_regularizer_coef': 0.,
+            'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it
-            'epochs': 1,
+            'epochs': 50,
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
             'finetune_backbones': False,
-            'target_size': 24576,
-            'concatLayerSize': 4186368,
+            'target_size': 512,
+            'concatLayerSize': 106496, # 4186368 for SVHN, 106496 for Flowers102
             #'finetune_lr_multiplier': 1.,
             #'finetune_steps_multiplier': 1.,
             #'feature_normalization': 'unit_vector',
@@ -48,5 +48,6 @@ def get_config(config_string):
         for key, value in matches:
             # Update the configuration dictionary with parsed values
             config[key] = value
+            print(f'Changed config for {key} to be {config[key]}')
 
     return config

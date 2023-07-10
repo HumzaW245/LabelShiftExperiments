@@ -29,8 +29,9 @@ def evaluate(config):
   # Load the pre-trained ResNet-50 model
   
   if(learningConfig.useH2T): #Phase 1 to get scores and top scores as indices for phase2 to use as linear head
-    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, learningConfig.concatLayerSize, True, None)
-    model.setFinetuneBackbone(False) #This model is the initialization of phase1 to calculate scores so we don't use finetuning in this step
+    model = h2t.Net(config.dataset, False, learningConfig.target_size, learningConfig.concatLayerSize, True, None) #This model is the initialization of phase1 to calculate scores so we don't use finetuning in this step
+    print(f'To determine scores and select features, this phase has finetune backbone set to {model.finetune_backbone}')
+
     optimizer = helper.getOptimizer(model, learningConfig)
     model.to(device)
     for epoch in range(learningConfig.epochs):
@@ -44,7 +45,8 @@ def evaluate(config):
     selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
     newConcatLayerSize = len(selected_feature_indices)
     print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
-    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices)
+    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices) #FT can be T/F since H2T can be with or without FT
+    print(f'With selected features, this phase has finetune backbone set to {model.finetune_backbone}') 
     print(f'\n\n PHASE 1 COMPLETE --- Selected features have size {selected_feature_indices.shape} and are {selected_feature_indices}')
 
   else:
@@ -60,8 +62,8 @@ def evaluate(config):
 
     accs.append(trainTest.test(model, device, test_loader))
 
-    accs = np.array(accs)
-    print(f'Accuracy: {accs.mean()}')
+  accs = np.array(accs)
+  print(f'Accuracy: {accs.mean()}')
 
 
 '''

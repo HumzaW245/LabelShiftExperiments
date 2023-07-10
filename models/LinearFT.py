@@ -7,6 +7,10 @@ class Net(torch.nn.Module):
     def __init__(self, datasetName, finetune_backbones):
         super(Net, self).__init__()
         
+        
+        #False by default since this condition is specific to head2toe
+        self.inScoreCalcPhase = False #This is just so evaluate.py, trainTestConfig.py, etc can do model.inScoreCalcPhase. 
+
         # Dataset
         self.datasetName = datasetName
         # Load the pre-trained ResNet-50 model

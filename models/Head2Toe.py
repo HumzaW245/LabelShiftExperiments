@@ -317,6 +317,8 @@ class Net(torch.nn.Module):
       
     def setFinetuneBackbone(self, boolVal):
       self.finetune_backbone = boolVal
+      if(self.finetune_backbone == False):
+        helper.freezeBackbone(self.model)
 
     def getOutputHeadLayerWeights(self):
       return self.newOutputHead.weight
