@@ -45,10 +45,19 @@ def evaluate(config):
     selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
     newConcatLayerSize = len(selected_feature_indices)
     print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
-    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices) #FT can be T/F since H2T can be with or without FT
-    print(f'With selected features, this phase has finetune backbone set to {model.finetune_backbone}') 
+
+    #print(model.getLayersWithRangesOfIndicesAfterProcessing())
+    #print(model.getLayersWithRangesOfIndicesAfterProcessing())
+    layersUsedForTopFPctIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_feature_indices, model.getLayersWithRangesOfIndicesAfterProcessing())
+    helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected)
+    #print(f'\n\n The top {learningConfig.fraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
     print(f'\n\n PHASE 1 COMPLETE --- Selected features have size {selected_feature_indices.shape} and are {selected_feature_indices}')
 
+
+
+    model = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices) #FT can be T/F since H2T can be with or without FT
+    print(f'With selected features, this next phase has finetune backbone set to {model.finetune_backbone}') 
+    
   else:
     model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)    
   

@@ -1,5 +1,5 @@
 import torch
-
+import matplotlib.pyplot as plt
 def numUniqueClasses(datasetName):
 
   datasetsClasses = {'SVHN': 10, 'Flowers102': 102, 'EuroSAT': 10}
@@ -34,6 +34,23 @@ def getIndicesOfTopFscores(device, fraction_F, scores):
     print(f'topF percent indices = {len(topFindices)} and the indices are {topFindices}')
     return topFindices
 
+def layersForTopFPctIndicesSelected(selected_feature_indices, layersWithRangesDict):
+  result = {}
+  print("inlayers func")
+  for key, ranges in layersWithRangesDict.items():
+      count = 0
+
+      start = ranges[0]
+      end = ranges[1]
+      
+      for index in selected_feature_indices:
+          if start <= index <= end:
+              count += 1
+      result[key] = count / len(selected_feature_indices) # % in each key
+  
+  return result  
+
+
 def getOptimizer(model, learningConfig):
   
   if learningConfig.optimizer == 'adam':
@@ -54,3 +71,25 @@ def getOptimizer(model, learningConfig):
     raise ValueError("the config optimizer used is not supported. Needs to be defined where others are defined like SGD and adam.")
 
   return optimizer
+
+
+  import matplotlib.pyplot as plt
+
+def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected):
+  data = layersUsedForTopFPctIndicesSelected
+  
+  keys = list(data.keys())
+  values = list(data.values())
+
+
+  plt.figure(figsize=(32, 16))  # Set the size of the figure
+  plt.bar(range(len(keys)), values)  # Create a bar plot
+  plt.xticks(range(len(keys)), keys, rotation=90)  # Set the x-axis labels
+
+  plt.xlabel('Layers')  # Set the x-axis label
+  plt.ylabel('Values')  # Set the y-axis label
+  plt.title(f'The top {learningConfig.fraction_F * 100} % features selected by layer')  # Set the title of the plot
+  
+  # Save the plot as an image file
+  plt.savefig('layersUsedForTopFPctIndicesSelected.png')
+
