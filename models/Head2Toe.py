@@ -51,6 +51,8 @@ class Net(torch.nn.Module):
 
         #Forward hook setup to store intermediate outputs of chosen layers/features
         self._layersChosen = {}
+        
+        self.layersWithRangesOfIndicesAfterProcessing = {} #This is to track which layer has which indices after flattening outputs
 
         for name, module in self.model.named_modules():
           module.register_forward_hook(self.save_outputs_hook(name)) #Name is what the layer_id is in save_outputs_hook...usually forward hooks are not callable so just have (Self, module, input, output) but here a function with those is defined so it can call with passed argument
@@ -100,100 +102,19 @@ class Net(torch.nn.Module):
 
 
     '''
-    Process of concatenating layers.
-    **Similar to flatten_and_concat function of head2toe repo *************************
-
-    NOTE: In head2toe paper, section 3.3, figure 5, pooling is done first and then flatten->normalize. 
-    BUT, if do that, figure out how will the target size will be achieved  since each tensor in the list for tensors to concatenate of features will be of different size initially
-
-      -============================MIGHT NEED TO CORRECT THIS -> See section 3.3 of paper and flatten_and_concat in finetune.py of h2t repo===========================
-                                    NOT Adaptive pooling since that immediately reduces size of Wall to W_targetsize since concatenated layer is reduced to target size
-                                    Instead want to do 1-D Strided pooling when shape is [x, x, x] and
-                                    2-D Strided pooling when shape is [x, x, x, x]
-                                    and NO pooling(just append) if shape is [x, x] (e.g. 'fc' layer output ...even if identity, it will have previous result at that size)
-
-                                    -----SEE if len(output.shape) == 4:, elif, elif, logic in flatten_and_concat AND 
-                                    See how appending on all_features is happening.
-
-      =========================================
-      =========================================
-      ============CORRECTION NEEDED...SEE ABOVE=============================
-      ============CORRECTION NEEDED...SEE ABOVE=============================
-      ============CORRECTION NEEDED...SEE ABOVE=============================
-      ============CORRECTION NEEDED...SEE ABOVE=============================
-      ============CORRECTION NEEDED...SEE ABOVE=============================
-      ============CORRECTION NEEDED...SEE ABOVE=============================
-      =========================================
-      =========================================
-      =========================================
-      =========================================
-      =========================================
-
-    #----------------------The description below is for the code section commented out as #OLD approach below
-
-    1) Flatten all tensor to shape [batch_size, features]
-
-    2) Apply adaptive pooling to match target size
-
-    3) Normalize
-
-
-    This is flattening everything passed starting from dim 1 
-    e.g.
-    "layer4" was stored in list of selected_features
-    Shape of feature before flattening: torch.Size([32, 2048, 7, 7])
-    Shape of feature after flattening: torch.Size([32, 100352])
-    
-    "fc" was stored in list of selected_features
-    Shape of feature before flattening: torch.Size([32, 2048])
-    Shape of feature after flattening: torch.Size([32, 2048])
-
-    Final concatenated shape:
-    Shape of final concatenated layer torch.Size([32, 102400])
+    Apply pooling to each layer (outputs of layers) (2D strided for 4 dim shapes, 1D strided for 3 dim shapes, no pooling for 2 dim shapes)
+    Flatten
+    Normalize each output
+    Finally -> concatenate along dim 1 all outputs to make concatenated layer
     '''
     def getConcatenatedLayer(self, selected_features):
       pool_size = 0
       target_size = self.targetSize
 
       all_features = []
-      '''
-      for key, output in selected_features.items():
 
-        #2-D Strided pooling when shape is [batch_size, channels, height, width]
-        if len(output.shape) == 4: 
-          _, channels, height, width = output.shape #Channels first in pytorch
-
-          output = self.adaptive_pool2D(output)
-          output = output.flatten(start_dim=1)
-          print(f'flattened shape for 2d: {output.shape}')
-
-          
-          all_features.append(output)
-
-
-        #1-D Strided pooling when shape is [batch_size, channels, channelFeatures]
-        elif len(output.shape) == 3: 
-          _, channels, n_features = output.shape #Channels first in pytorch
-
-          output = self.adaptive_pool1D(output)
-          output = output.flatten(start_dim=1)
-          print(f'flattened shape for 1d: {output.shape}')
-
-          all_features.append(output)
-
-        #No pooling when shape is [batch_size, features]
-        elif len(output.shape) == 2: 
-          all_features.append(output)
-
-        else:
-          raise ValueError(
-              f'Output tensor: {key} with shape {output.shape} not 2D or 4D.')
-      '''
-
-      '''
-      BELOW: This was meant for when pool size needs to be calculated  when there is no target size given ---> So when target size is given, just applying adaptive pooling so commenting out below for now
-      '''
-      
+      startRange = 0
+      endRange = 0
       for key, output in selected_features.items():
 
         #2-D Strided pooling when shape is [batch_size, channels, height, width]
@@ -247,11 +168,17 @@ class Net(torch.nn.Module):
         else:
           raise ValueError(
               f'Output tensor: {key} with shape {output.shape} not 2D or 4D.')
-      
+        
+
+        #Getting the range for indices belonging to each kind of layer so that we can track how many indices per range are used
+        numFeaturesAfterFlattening = output.shape[-1] #Last dimension will be the flattened features dimension. First dim is batch_size
+        endRange = endRange + numFeaturesAfterFlattening
+        self.layersWithRangesOfIndicesAfterProcessing[str(key)] = (startRange, endRange) # range for key
+        startRange = startRange + numFeaturesAfterFlattening #This is after updating keys so next iteration is correct
 
       '''
       The flatten_and_concat function says its supposed to summarize into a single feature vector
-      but it returns a list of tesnors instead. 
+      but it returns a list of tensors instead. 
 
       Based on my understanding of the paper, we want to train a head with weights Wall so concatenating along features dimension to
       make a layer which will essentially have weights Wall and can be trained with regularization.
@@ -273,37 +200,11 @@ class Net(torch.nn.Module):
       #concatenating into one tensor
       concatenatedFeatures = torch.cat(all_features, dim=1) #Concatenating flattened layers 
 
+
+
+
       #print(f'shape of concatenated layer {concatenatedFeatures.shape}')
       return concatenatedFeatures          
-        
-      #OLD approach below
-
-
-      '''
-
-      flattened_tensors = []
-      for key, tensor in selected_features.items():
-        #print(f'Shape of feature before flattening: {tensor.shape}')
-        flatTensor = torch.flatten(tensor, 1)
-        
-        #print(f'Shape of feature after flattening: {flatTensor.shape}')
-        flattened_tensors.append(flatTensor)
-      
-      concatenatedLayer = torch.cat(flattened_tensors, dim=1) #Concatenating flattened layers
-      #print(f'Shape of concatenated layer {concatenatedLayer.shape}')
-  
-
-      #Apply adaptive pooling to resize the tensor
-      pooled_concatenatedLayer = self.adaptive_pool1D(concatenatedLayer)  #Pass through adaptive pooling layer to change size to target size
-      
-
-      #Normalize
-      final_concatenatedLayer = torch.nn.functional.normalize(pooled_concatenatedLayer, p=2, dim=1)
-
-      #print(f'AFTER Adaptive pooling and normalization, shape of final concatenated layer {final_concatenatedLayer.shape}')
-      return final_concatenatedLayer
-      '''
-
       
     def group_lasso_regularization(self): #regularizer_loss = norm(norm(x, ord=r, axis=1), ord=p)`
       w_all = self.getOutputHeadLayerWeights() #Shape is [out_features, in_features] so first norm over out_features
@@ -322,3 +223,8 @@ class Net(torch.nn.Module):
 
     def getOutputHeadLayerWeights(self):
       return self.newOutputHead.weight
+
+
+      
+    def getLayersWithRangesOfIndicesAfterProcessing(self):
+      return self.layersWithRangesOfIndicesAfterProcessing
