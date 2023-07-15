@@ -75,7 +75,7 @@ def getOptimizer(model, learningConfig):
 
   import matplotlib.pyplot as plt
 
-def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected):
+def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig):
   data = layersUsedForTopFPctIndicesSelected
   
   keys = list(data.keys())

@@ -10,6 +10,7 @@ def get_config(config_string):
         'runTypeNameForWandB': '(No name given to run)',
         'learning': ConfigDict({
             'useH2T': True,
+            'use_early_conv_phase': True,
             'optimizer': 'adam',
             'learning_rate': 0.01,
             'weight_decay': 0,
@@ -18,7 +19,8 @@ def get_config(config_string):
             'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it
-            'epochs': 50,
+            'epochs': 3,
+            'early_conv_epochs' : 2, # Early Convergence run to get roughly initialized Linear Layer
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
             'finetune_backbones': False,
