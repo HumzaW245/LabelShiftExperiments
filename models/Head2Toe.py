@@ -49,11 +49,11 @@ class Net(torch.nn.Module):
           self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
 
         if custom_outputHead != None:
+          #print(f'Passed custom_output head has weight {custom_outputHead.weight.data}')
           with torch.no_grad():
-            self.newOutputHead.weight.copy_(custom_outputHead.weight)
-            self.newOutputHead.bias.copy_(custom_outputHead.bias)
+            self.newOutputHead.weight.copy_(custom_outputHead.weight.data)
+            self.newOutputHead.bias.copy_(custom_outputHead.bias.data)
 
-        print(f'on initialization, self.newOutputHead.weight.data = {self.newOutputHead.weight.data}')
         #Forward hook setup to store intermediate outputs of chosen layers/features
         self._layersChosen = {}
         
@@ -64,9 +64,7 @@ class Net(torch.nn.Module):
 
     def forward(self, x): 
         fwdPassBeforeClassifier = self.model(x)
-        #print(fwdPassBeforeClassifier.shape)
         selected_features = self._layersChosen # At this point, have not gone through classifier but have all chosen features so can now pass this through a linear layer for classification (FIRST NEED TO CONCAT etc and make it passable to linear layers)
-        #print(selected_features)
         
         #Concatenated Layer for classifier
         concatenated_features = self.getConcatenatedLayer(selected_features) #This is flattening everything passed starting from dim 1 (see definition)

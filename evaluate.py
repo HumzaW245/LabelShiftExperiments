@@ -75,7 +75,6 @@ def evaluate(config):
         trainTest.train(model_early_conv, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
       
       custom_outputHead = model_early_conv.getOutputHead()
-      print(custom_outputHead.weight.data)
     
     else:
       custom_outputHead = None

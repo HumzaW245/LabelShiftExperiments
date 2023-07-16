@@ -2,7 +2,7 @@ import re
 from ml_collections import ConfigDict
 
 def get_config(config_string):
-    train_batch_size = 128
+    train_batch_size = 64
     eval_batch_size = 50
     config = ConfigDict({
         'dataset': 'Flowers102',
@@ -19,7 +19,7 @@ def get_config(config_string):
             'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it
-            'epochs': 3,
+            'epochs': 50,
             'early_conv_epochs' : 2, # Early Convergence run to get roughly initialized Linear Layer
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
