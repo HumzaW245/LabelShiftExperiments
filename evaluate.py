@@ -64,9 +64,14 @@ def evaluate(config):
 
     '''
     =============================Early Convergence Init: To get weights if want a roughly trained Linear Layer to use as initializor for Phase 2===========================
+
+    Note:Finetune backbones is set to FALSE since we dont want to alter backbone here. Just want a roughly initialized head so in final phase if there is FT, any changes in backbone params is not extreme since initialization won't be random
+    **The if condition checks if config is set to check if we have FT = TRUE because otherwise it's just a H2T experiment with no FT used to initialize another H2T experiment with no FT
+
     '''
-    if learningConfig.use_early_conv_phase:
-      model_early_conv = h2t.Net(config.dataset, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, None) #FT can be T/F since H2T can be with or without FT
+
+    if learningConfig.use_early_conv_phase and learningConfig.finetune_backbones == True: 
+      model_early_conv = h2t.Net(config.dataset, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, None) #FT can be T/F since H2T can be with or without FT
       
 
       optimizer = helper.getOptimizer(model_early_conv, learningConfig)
