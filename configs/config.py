@@ -2,17 +2,17 @@ import re
 from ml_collections import ConfigDict
 
 def get_config(config_string):
-    train_batch_size = 64
+    train_batch_size = 128
     eval_batch_size = 50
     config = ConfigDict({
         'dataset': 'Flowers102',
         'printTraining': True,
         'runTypeNameForWandB': '(No name given to run)',
         'learning': ConfigDict({
-            'useH2T': True,
-            'use_early_conv_phase': True,
+            'useH2T': False,
+            'use_early_conv_phase': False,
             'optimizer': 'adam',
-            'learning_rate': 0.01,
+            'learning_rate': 0.0001,
             'weight_decay': 0,
             'momentum': 0,
             'fraction_F': 0.1,
@@ -23,7 +23,7 @@ def get_config(config_string):
             'early_conv_epochs' : 2, # Early Convergence run to get roughly initialized Linear Layer
             'train_batch_size': train_batch_size,
             'eval_batch_size': eval_batch_size,
-            'finetune_backbones': False,
+            'finetune_backbones': True,
             'target_size': 512,
             'concatLayerSize': 106496, # 4186368 for SVHN, 106496 for Flowers102
             #'finetune_lr_multiplier': 1.,
@@ -50,6 +50,6 @@ def get_config(config_string):
         for key, value in matches:
             # Update the configuration dictionary with parsed values
             config[key] = value
-            print(f'Changed config for {key} to be {config[key]}')
+            print(f'Changed config from default for {key} to be {config[key]}')
 
     return config

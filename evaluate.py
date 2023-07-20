@@ -94,6 +94,7 @@ def evaluate(config):
 
   # Linear Model
   else:
+    print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {learningConfig.finetune_backbones}-----------------------\n\n\n")
     model = linearFT.Net(config.dataset, learningConfig.finetune_backbones)    
   
   #This will either be the 2nd model with select features optimizer OR if it is a Linear/FT run, it will be the optimizer for that. Cannot put this inside the else condition above
