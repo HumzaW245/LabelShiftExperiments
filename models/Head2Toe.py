@@ -14,7 +14,7 @@ from typing import Dict, Iterable, Callable
 from torch import Tensor
 import math
 class Net(torch.nn.Module):
-    def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices):
+    def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead):
         super(Net, self).__init__()
         self.model = models.resnet50(pretrained=True)
 
@@ -42,12 +42,17 @@ class Net(torch.nn.Module):
 
         #New output head
         targetTaskOutFeatures = helper.numUniqueClasses(datasetName) # num of classes in target task
-        
+      
         if self.inScoreCalcPhase == False: #so if in 2nd phase, incoming features is # selected_indices
           self.newOutputHead = nn.Linear(len(self.selected_feature_indices), targetTaskOutFeatures, bias=True)  # Create a new classifier
         else:
           self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
 
+        if custom_outputHead != None:
+          #print(f'Passed custom_output head has weight {custom_outputHead.weight.data}')
+          with torch.no_grad():
+            self.newOutputHead.weight.copy_(custom_outputHead.weight.data)
+            self.newOutputHead.bias.copy_(custom_outputHead.bias.data)
 
         #Forward hook setup to store intermediate outputs of chosen layers/features
         self._layersChosen = {}
@@ -59,9 +64,7 @@ class Net(torch.nn.Module):
 
     def forward(self, x): 
         fwdPassBeforeClassifier = self.model(x)
-        #print(fwdPassBeforeClassifier.shape)
         selected_features = self._layersChosen # At this point, have not gone through classifier but have all chosen features so can now pass this through a linear layer for classification (FIRST NEED TO CONCAT etc and make it passable to linear layers)
-        #print(selected_features)
         
         #Concatenated Layer for classifier
         concatenated_features = self.getConcatenatedLayer(selected_features) #This is flattening everything passed starting from dim 1 (see definition)
@@ -222,9 +225,10 @@ class Net(torch.nn.Module):
         helper.freezeBackbone(self.model)
 
     def getOutputHeadLayerWeights(self):
-      return self.newOutputHead.weight
-
-
+      return self.newOutputHead.weight #Don't use .weight.data because .weight will track operations in computation graph which is important when doing backprop with regularization loss
+      
+    def getOutputHead(self):
+      return self.newOutputHead
       
     def getLayersWithRangesOfIndicesAfterProcessing(self):
       return self.layersWithRangesOfIndicesAfterProcessing

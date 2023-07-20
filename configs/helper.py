@@ -2,7 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 def numUniqueClasses(datasetName):
 
-  datasetsClasses = {'SVHN': 10, 'Flowers102': 102, 'EuroSAT': 10}
+  datasetsClasses = {'SVHN': 10, 'Flowers102': 102, 'EuroSAT': 10, 'CIFAR100': 100}
   print(f'dataset {datasetName} has {datasetsClasses[datasetName]} unique classes')
   return datasetsClasses[datasetName]
 
@@ -73,9 +73,9 @@ def getOptimizer(model, learningConfig):
   return optimizer
 
 
-  import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected):
+def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig):
   data = layersUsedForTopFPctIndicesSelected
   
   keys = list(data.keys())

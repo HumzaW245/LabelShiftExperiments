@@ -72,9 +72,9 @@ def getTrainTestLoaders(config):
         ])
 
         # Create an instance of the euroSAT dataset with the transforms
-        trainData = datasets.EuroSAT('../data', split='train', download=True, transform=transform)
+        trainData = datasets.EuroSAT(root='../data', train=True, download=True, transform=transform)
 
-        testData = datasets.EuroSAT('../data', split='test', download=True, transform=transform)
+        testData = datasets.EuroSAT(root='../data', train=True, download=True, transform=transform)
 
         learningConfig = config.learning
 
