@@ -11,6 +11,10 @@ import wandb
 
 def evaluate(config):
   
+  #Making sure config dictionary is update to have values expected
+  print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
+
+
   wandb.login()
   #------------------------------------------------------>INITIALIZING WANDB PROJECT NAME AND NAME OF RUN <--------------------------------------------------
   wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
@@ -116,6 +120,16 @@ Executing Run (optional: with a custom config)
 '''
 
 #custom_config = 'learning_rate=0.1, epochs=2, train_batch_size=32, printTraining=True'
-config = config.get_config("")
 
-evaluate(config)
+import argparse
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Customize configuration settings.')
+    parser.add_argument('--config_string', type=str, help='Comma-separated key-value pairs to update config.')
+
+    args = parser.parse_args()
+
+    custom_config = args.config_string
+    config = config.get_config(custom_config)
+
+    evaluate(config)

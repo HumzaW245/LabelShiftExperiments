@@ -2,6 +2,7 @@ import re
 from ml_collections import ConfigDict
 
 def get_config(config_string):
+    print(f"\n\n\n CONFIG STRING PASSED IS {config_string} \n\n\n")
     train_batch_size = 128
     eval_batch_size = 50
     config = ConfigDict({
@@ -45,11 +46,31 @@ def get_config(config_string):
 
     if config_string:
         # Example pattern for parsing key-value pairs: key=value
-        pattern = r'(\w+)\s*=\s*([^,\n]+)'
+        pattern = r'(\w+(\.\w+)*)\s*=\s*([^,\n]+)'
         matches = re.findall(pattern, config_string)
-        for key, value in matches:
-            # Update the configuration dictionary with parsed values
-            config[key] = value
-            print(f'Changed config from default for {key} to be {config[key]}')
+        for full_key, _, value in matches:
+            # Extract the nested key and update the configuration dictionary with parsed values
+            keys = full_key.split('.')
+            current_dict = config
+            for key in keys[:-1]:
+                current_dict = current_dict[key]
+            last_key = keys[-1]
+
+            # Convert the value to the appropriate data type
+            if isinstance(current_dict[last_key], bool):
+                if value.lower() == 'true':
+                    current_dict[last_key] = True
+                else:
+                    current_dict[last_key] = False
+
+            elif isinstance(current_dict[last_key], int):
+                current_dict[last_key] = int(value)
+            elif isinstance(current_dict[last_key], float):
+                current_dict[last_key] = float(value)
+            elif isinstance(current_dict[last_key], str):
+                current_dict[last_key] = str(value)
+            # Add more data type conversions for other types as needed
+
+            print(f'Changed config from default for {full_key} to be {current_dict[last_key]}')
 
     return config
