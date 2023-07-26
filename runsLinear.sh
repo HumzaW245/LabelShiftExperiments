@@ -16,16 +16,16 @@ source /home/humza245/projects/def-eugenium/humza245/torchEnv/bin/activate
 
 
 # First job - SVHN
-python evaluate.py \
---config_string \
-"dataset=SVHN,
- runTypeNameForWandB=Linear,
- learning.useH2T=False,
- learning.use_early_conv_phase=False
- learning.learning_rate=0.01, 
- learning.epochs=5, 
- learning.train_batch_size=128, 
- learning.finetune_backbones=False" &
+# python evaluate.py \
+# --config_string \
+# "dataset=SVHN,
+#  runTypeNameForWandB=Linear,
+#  learning.useH2T=False,
+#  learning.use_early_conv_phase=False
+#  learning.learning_rate=0.01, 
+#  learning.epochs=5, 
+#  learning.train_batch_size=128, 
+#  learning.finetune_backbones=False" &
 
 # Second job - Flowers102
 python evaluate.py \
