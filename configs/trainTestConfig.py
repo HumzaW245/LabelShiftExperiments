@@ -33,7 +33,7 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
         optimizer.step()
 
         #Wandb logging
-        wandb.log({"Train Loss Per Batch": loss.item()})
+        #wandb.log({"Train Loss Per Batch": loss.item()})
         torch.cuda.empty_cache() # Necessary for efficiency and cuda errors. Maybe even put somewhere in train function for each batch
 
     if display:
@@ -55,7 +55,7 @@ def test(model, device, test_loader):
             correct += pred.eq(target.view_as(pred)).sum().item()
             
             #Wandb logging
-            wandb.log({"Test Loss Per Batch": test_lossBatch})
+            #wandb.log({"Test Loss Per Batch": test_lossBatch})
             torch.cuda.empty_cache() # Necessary for efficiency and cuda errors. Maybe even put somewhere in train function for each batch
 
     test_lossEpoch /= len(test_loader.dataset)
@@ -65,5 +65,5 @@ def test(model, device, test_loader):
         accuracyTest))
 
     #Wandb logging
-    wandb.log({"Test Loss Per Epoch": test_lossEpoch, "Test Accuracy Per Epoch": accuracyTest})
+    #wandb.log({"Test Loss Per Epoch": test_lossEpoch, "Test Accuracy Per Epoch": accuracyTest})
     return accuracyTest

@@ -7,7 +7,8 @@ import torch
 import numpy as np
 import input_pipeline as pipeLine
 import configs.config as config
-import wandb
+import sys
+#import wandb
 
 def evaluate(config):
   
@@ -15,12 +16,19 @@ def evaluate(config):
   print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
 
 
-  wandb.login()
+  #wandb.login()
   #------------------------------------------------------>INITIALIZING WANDB PROJECT NAME AND NAME OF RUN <--------------------------------------------------
-  wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
+  #wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
 
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
+
+
+  #to make sure not training on cpu of cluster (login node)
+  if device == 'cpu':
+    print('\n\n CONNECTED TO A LOGIN NODE SINCE CPU BEING USED --- EXITING --- CONNECT TO A COMPUTE NODE WITH GPU FOR HEAVY COMPUTATION TASKS \n\n')
+    sys.exit()
+
   print(device) # you will really need gpu's for this part
 
 
@@ -60,7 +68,7 @@ def evaluate(config):
     print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
 
     layersUsedForTopFPctIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_feature_indices, model.getLayersWithRangesOfIndicesAfterProcessing())
-    helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig)
+    #helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig)
     #print(f'\n\n The top {learningConfig.fraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
     print(f'\n\n PHASE 1 COMPLETE --- Selected features have size {selected_feature_indices.shape} and are {selected_feature_indices}')
 
@@ -132,4 +140,16 @@ if __name__ == '__main__':
     custom_config = args.config_string
     config = config.get_config(custom_config)
 
-    evaluate(config)
+    #Log File name
+    log_file = config.dataset + ' (' + config.runTypeNameForWandB + ').log'
+    
+    # Open the file in write mode
+    with open(log_file, "w") as f:
+        # Redirect the standard output to the file
+        sys.stdout = f
+
+        # Your code here (all printed outputs will be saved to the log file)
+        evaluate(config)
+
+    # Reset the standard output to the console (optional, but recommended)
+    sys.stdout = sys.__stdout__

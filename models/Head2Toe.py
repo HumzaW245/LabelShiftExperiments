@@ -51,8 +51,9 @@ class Net(torch.nn.Module):
         if custom_outputHead != None:
           #print(f'Passed custom_output head has weight {custom_outputHead.weight.data}')
           with torch.no_grad():
-            self.newOutputHead.weight.copy_(custom_outputHead.weight.data)
-            self.newOutputHead.bias.copy_(custom_outputHead.bias.data)
+            self.newOutputHead.weight.data.copy_(custom_outputHead.weight.data)
+            self.newOutputHead.bias.data.copy_(custom_outputHead.bias.data)
+            #del custom_outputHead
 
         #Forward hook setup to store intermediate outputs of chosen layers/features
         self._layersChosen = {}
