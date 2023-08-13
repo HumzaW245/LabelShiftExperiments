@@ -28,7 +28,33 @@ def get_config(config_string):
             'target_size': 512,
             'concatLayerSize': 106496 # 4186368 for SVHN, 106496 for Flowers102
         }),
-        'model_name': 'Finetune'
+        'model_name': 'Finetune',
+        'spuriousConfig': ConfigDict({
+            'checkpointDirectory': '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/WaterbirdsData/erm_seed1',
+            "data_dir": None,
+            "test_wb_dir": None,
+            "test_grey_dir": None,
+            "test_places_dir": None,
+            "output_dir": "logs/",
+            "pretrained_model": False,
+            "reweight_classes": False,
+            "reweight_places": False,
+            "reweight_groups": False,
+            "augment_data": False,
+            "scheduler": False,
+            "batch_size": 128,
+            "num_epochs": 300,
+            "weight_decay": 1e-4,
+            "momentum_decay": 0.9,
+            "init_lr": 0.001,
+            "eval_freq": 1,
+            "seed": 1,
+            "multitask": False,
+            "predict_place": False,
+            "num_minority_groups_remove": 0,
+            "resume": None
+        })
+
     })
 
     '''
