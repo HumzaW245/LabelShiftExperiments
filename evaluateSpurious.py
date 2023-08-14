@@ -15,9 +15,9 @@ def evaluate(config):
   print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
 
 
-  wandb.login()
+  #wandb.login()
   #------------------------------------------------------>INITIALIZING WANDB PROJECT NAME AND NAME OF RUN <--------------------------------------------------
-  wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
+  #wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
 
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
@@ -36,7 +36,7 @@ def evaluate(config):
 
   # Linear Model
   print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {learningConfig.finetune_backbones}-----------------------\n\n\n")
-  model = linearFT.Net(config, n_classes, learningConfig.finetune_backbones)    
+  model = spuriousH2T.Net(config, n_classes, learningConfig.finetune_backbones)    
   
   #This will either be the 2nd model with select features optimizer OR if it is a Linear/FT run, it will be the optimizer for that. Cannot put this inside the else condition above
   
@@ -47,12 +47,13 @@ def evaluate(config):
 ##################################################TO DO:########################################################################################  
 #############NEED TO USE VALUES GIVEN IN SPURIOUS CONFIG FOR OPTIMIZER HERE. 
 #############TO FIX!! MAYBE JUST ADD THE SAME NAME AND PARAMS WITH DEFAULTS IN BOTH SO CAN RUN WITH BOTH LEARNING AND SPURIOUS CONFIG
+  print(f'getting optimizer')
   optimizer = helper.getOptimizer(model, spuriousConfig)  
   model.to(device)
   print(f"\n\n\n {device} \n\n\n")
 
   for epoch in range(learningConfig.epochs):
-    
+    print(f'epoch is {epoch}')
     ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
     ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
     ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
@@ -61,6 +62,7 @@ def evaluate(config):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
+        print(target)
     ###########################DELETE ABOVE AND UNCOMMENT BELOW trainTest.train function....#########################
     ###########################DELETE ABOVE AND UNCOMMENT BELOW trainTest.train function....#########################
     ###########################DELETE ABOVE AND UNCOMMENT BELOW trainTest.train function....#########################

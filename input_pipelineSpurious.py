@@ -17,6 +17,7 @@ from functools import partial
 
 from WaterbirdsData.wb_data import WaterBirdsDataset, get_loader, get_transform_cub, log_data
 
+from WaterbirdsData.utils import Logger, AverageMeter, set_seed, evaluate, get_y_p
 
 def getTrainTestLoaders(config):
 
@@ -32,14 +33,14 @@ def getTrainTestLoaders(config):
         f.write(' '.join(sys.argv))
         f.write('\n')
 
-    with open(os.path.join(args.output_dir, 'args.json'), 'w') as f:
-        args_json = json.dumps(vars(args))
-        f.write(args_json)
+    # with open(os.path.join(args.output_dir, 'args.json'), 'w') as f:
+    #     args_json = json.dumps(vars(args))
+    #     f.write(args_json)
 
     set_seed(args.seed)
 
-    writer = SummaryWriter(log_dir=args.output_dir)
-    logger = Logger(os.path.join(args.output_dir, 'log.txt'))
+    # writer = SummaryWriter(log_dir=args.output_dir)
+    # logger = Logger(os.path.join(args.output_dir, 'log.txt'))
 
     splits = ["train", "test", "val"]
     basedir = args.data_dir

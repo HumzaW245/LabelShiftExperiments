@@ -25,15 +25,32 @@ class Net(torch.nn.Module):
         # Dataset
         self.datasetName = config.dataset,
 
-        # Load the Checkpoint
         spuriousConfig = config.spuriousConfig
-        checkpointDirectory = spuriousConfig.checkpointDirectory
-        checkpoint = torch.load(checkpointDirectory + '/final_checkpoint.pt')
-        state_dict = checkpoint['state_dict']
-        original_class_count = checkpoint['class_count']
+        
         self.model = models.resnet50(pretrained=spuriousConfig.pretrained_model) 
         
-        # IF WANT TO USE PRETRAINED MODEL
+        #New output head
+        in_features = self.model.fc.in_features #The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True) so storing the 2048 and replacing this to map from 2048 to numClasses for target task ====can see the fc layer like this: backbone = models.resnet50(pretrained=True) => print(backbone.fc)
+        targetTaskOutFeatures = n_classes
+        classifier = nn.Linear(in_features, targetTaskOutFeatures, bias=True)  # Create a new classifier
+        classifier.weight.requires_grad = True
+        classifier.bias.requires_grad = True
+        self.model.fc = classifier  # Replace the classifier layer
+
+        # Load the Checkpoint
+        checkpointDirectory = spuriousConfig.checkpointDirectory
+        checkpoint = torch.load(checkpointDirectory + '/final_checkpoint.pt')
+
+        # Load the model weights from the checkpoint
+        model_state_dict = self.model.state_dict()
+        for key in checkpoint.keys():
+            if key in model_state_dict:
+                model_state_dict[key] = checkpoint[key]
+
+        # Load the modified state dict into the model
+        self.model.load_state_dict(model_state_dict)
+
+        # IF WANT TO USE PRETRAINED CHECKPOINT MODEL
         if spuriousConfig.resume is not None:
           print('Resuming from checkpoint at {}...'.format(spuriousConfig.resume))
           checkpoint = torch.load(spuriousConfig.resume)
@@ -48,13 +65,6 @@ class Net(torch.nn.Module):
           helper.freezeBackbone(self.model)
           
 
-        #New output head
-        in_features = self.model.fc.in_features #The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True) so storing the 2048 and replacing this to map from 2048 to numClasses for target task ====can see the fc layer like this: backbone = models.resnet50(pretrained=True) => print(backbone.fc)
-        targetTaskOutFeatures = n_classes
-        classifier = nn.Linear(in_features, targetTaskOutFeatures, bias=True)  # Create a new classifier
-        classifier.weight.requires_grad = True
-        classifier.bias.requires_grad = True
-        self.model.fc = classifier  # Replace the classifier layer
 
     def forward(self, x):
         x = self.model(x)
