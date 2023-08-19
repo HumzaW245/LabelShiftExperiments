@@ -24,6 +24,7 @@ def getTrainTestLoaders(config):
     # Just attaching the config dict to args argument and rest of code is same as dfr repo
     args = config.spuriousConfig 
 
+    
     assert args.reweight_groups + args.reweight_classes <= 1
     assert args.multitask + args.predict_place <= 1
 
@@ -79,7 +80,7 @@ def getTrainTestLoaders(config):
     # testset = WaterBirdsDataset(basedir=basedir, split="test", transform=test_transform)
     # valset = WaterBirdsDataset(basedir=basedir, split="val", transform=test_transform)
 
-    loader_kwargs = {'batch_size': args.batch_size, 'num_workers': 4, 'pin_memory': True}
+    loader_kwargs = {'batch_size': args.batch_size, 'num_workers': 1, 'pin_memory': True}
     train_loader = get_loader(
         trainset, train=True, reweight_groups=args.reweight_groups,
         reweight_classes=args.reweight_classes, reweight_places=args.reweight_places, **loader_kwargs)

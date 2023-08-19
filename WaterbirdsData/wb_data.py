@@ -4,9 +4,92 @@ import pandas as pd
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, BatchSampler
 from torch.utils.data.sampler import WeightedRandomSampler
 
+
+class BalancedBatchSampler(BatchSampler):
+    def __init__(self, dataset, reweight_classes=False, reweight_groups=False, reweight_places=False, batch_size=0):
+        self.dataset = dataset
+        self.reweight_classes = reweight_classes
+        self.reweight_groups = reweight_groups
+        self.reweight_places = reweight_places
+        self.batch_size = batch_size
+
+        self.indices_per_class, self.indices_per_group, self.indices_per_place = self._get_indices_per_X()
+        self.total_samples = len(self.dataset)
+        self.num_batches = self.total_samples // self.batch_size
+
+    def _get_indices_per_X(self):
+        # Implementation for getting indices for e.g. per group as a dictionary with key being the group and value being the list of indexes of all data for that group
+        indices_per_class = {}
+        indices_per_group = {}
+        indices_per_place = {}
+
+        #Store indices into corresponding class, group and place
+        for idx, item in enumerate(self.dataset):
+            
+            # SEE get_item of dataset... img, y, g, p (input, target, group, place)
+            #data = batch[0] //Don't need data, just want indices of target, group, place for when balancing based on 1 of these
+            target = item[1] #  Classes is target
+            group = item[2] 
+            place = item[3]
+
+            #Store index to its corresponding class in the indices_per_class dictionary which has keys = class, values = indices with that class in dataset
+            if target not in indices_per_class:
+                indices_per_class[target] = []
+            indices_per_class[target].append(idx)
+
+            #Store index to its corresponding group in the indices_per_group dictionary which has keys = group, values = indices with that group in dataset
+            if group not in indices_per_group:
+                indices_per_group[group] = []
+            indices_per_group[group].append(idx)
+
+            #Store index to its corresponding place in the indices_per_place dictionary which has keys = place, values = indices with that place in dataset
+            if place not in indices_per_place:
+                indices_per_place[place] = []
+            indices_per_place[place].append(idx)
+
+
+        return (indices_per_class, indices_per_group, indices_per_place)
+
+    def __iter__(self):
+        for _ in range(self.num_batches):
+            batch_indices = []
+
+            print(f'\n\n\n\nSAMPLER __ITER__ FUNCTION HERE \n\n\n\n\n AND NUM BATCHES {self.num_batches} and reweight group is set to {self.reweight_groups}')
+            if self.reweight_groups:
+                # Select samples from balanced groups
+                for group, indices_list in self.indices_per_group.items():
+                    indices = torch.tensor(indices_list)
+                    indicesToAddFromGroup = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_group)]] #Divide batch size by number of categories so e.g. 4 groups and 128 batch size then divide 128/4 = 32 per group
+                    print(f'These are how many indices there are in total for group {group} being added to the batch_indices variable= {len(indicesToAddFromGroup)} OUT OF TOTAL INDICES FOR GROUP ={len(indices)}')
+                    batch_indices.extend(indicesToAddFromGroup)
+
+            elif self.reweight_classes:
+                # Select samples from balanced classes
+                for target, indices_list in self.indices_per_class.items():
+                    indices = torch.tensor(indices_list)
+                    indicesToAddFromClass = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_class)]] #Divide batch size by number of categories so e.g. 4 CLASSes and 128 batch size then divide 128/4 = 32 per class
+                    print(f'These are how many indices there are in total for class {target} being added to the batch_indices variable= {len(indicesToAddFromClass)} OUT OF TOTAL INDICES FOR CLASS ={len(indices)}')
+                    batch_indices.extend(indicesToAddFromClass)
+
+            elif self.reweight_places:
+                # Select samples from balanced places
+                for place, indices_list in self.indices_per_place.items():
+                    indices = torch.tensor(indices_list)
+                    indicesToAddFromPlace = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_place)]] #Divide batch size by number of categories so e.g. 4 places and 128 batch size then divide 128/4 = 32 per place
+                    print(f'These are how many indices there are in total for place {place} being added to the batch_indices variable= {len(indicesToAddFromPlace)} OUT OF TOTAL INDICES FOR PLACE ={len(indices)}')
+                    batch_indices.extend(indicesToAddFromPlace)
+            else:
+                # Select samples without reweighting
+                batch_indices = torch.randperm(self.total_samples).tolist()
+
+            for i in range(0, len(batch_indices), self.batch_size):
+                yield batch_indices[i:i+self.batch_size]
+
+    def __len__(self):
+        return self.num_batches
 
 class WaterBirdsDataset(Dataset):
     def __init__(self, basedir, split="train", transform=None):
@@ -79,41 +162,16 @@ def get_transform_cub(target_resolution, train, augment_data):
 
 
 def get_loader(data, train, reweight_groups, reweight_classes, reweight_places, **kwargs):
-    if not train: # Validation or testing
-        assert reweight_groups is None
-        assert reweight_classes is None
-        assert reweight_places is None
-        shuffle = False
-        sampler = None
-    elif not (reweight_groups or reweight_classes or reweight_places): # Training but not reweighting
-        shuffle = True
-        sampler = None
-    elif reweight_groups:
-        # Training and reweighting groups
-        # reweighting changes the loss function from the normal ERM (average loss over each training example)
-        # to a reweighted ERM (weighted average where each (y,c) group has equal weight)
-        group_weights = len(data) / data.group_counts
-        weights = group_weights[data.group_array]
-
-        # Replacement needs to be set to True, otherwise we'll run out of minority samples
-        sampler = WeightedRandomSampler(weights, len(data), replacement=True)
-        shuffle = False
-    elif reweight_classes:  # Training and reweighting classes
-        class_weights = len(data) / data.y_counts
-        weights = class_weights[data.y_array]
-        sampler = WeightedRandomSampler(weights, len(data), replacement=True)
-        shuffle = False
-    else: # Training and reweighting places
-        place_weights = len(data) / data.p_counts
-        weights = place_weights[data.p_array]
-        sampler = WeightedRandomSampler(weights, len(data), replacement=True)
-        shuffle = False
+    batch_size = kwargs['batch_size']
+    num_workers = kwargs['num_workers']
+    pin_memory = kwargs['pin_memory']
 
     loader = DataLoader(
         data,
-        shuffle=shuffle,
-        sampler=sampler,
-        **kwargs)
+        batch_sampler=BalancedBatchSampler(data, reweight_classes=reweight_classes, reweight_groups=reweight_groups, reweight_places=reweight_places, batch_size=batch_size),
+        num_workers=num_workers,
+        pin_memory=pin_memory
+        )
     return loader
 
 

@@ -54,15 +54,44 @@ def evaluate(config):
 
   for epoch in range(learningConfig.epochs):
     print(f'epoch is {epoch}')
-    ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
-    ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
-    ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
-    ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
-    ###########################CHECKING DATA IS COMING FROM LOADERS PROPERLY AND BALANCED WHEN NEEDED, ETC...
     model.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
+    for batch_idx, batch in enumerate(train_loader):
+        
+
+        ##########################THE PAPER USES THE FULL BATCH SO IT HAS BALANCED GROUPS EXACTLY...IF USING MINI BATCHES, NEED TO 
+        ######################################## ADD LOGIC SO EVEN THE MINI BATCHES ARE BALANCED
+        ##########################THE PAPER USES THE FULL BATCH SO IT HAS BALANCED GROUPS EXACTLY...IF USING MINI BATCHES, NEED TO 
+        ######################################## ADD LOGIC SO EVEN THE MINI BATCHES ARE BALANCED
+        ##########################THE PAPER USES THE FULL BATCH SO IT HAS BALANCED GROUPS EXACTLY...IF USING MINI BATCHES, NEED TO 
+        ######################################## ADD LOGIC SO EVEN THE MINI BATCHES ARE BALANCED
+        ##########################THE PAPER USES THE FULL BATCH SO IT HAS BALANCED GROUPS EXACTLY...IF USING MINI BATCHES, NEED TO 
+        ######################################## ADD LOGIC SO EVEN THE MINI BATCHES ARE BALANCED
+        ##########################THE PAPER USES THE FULL BATCH SO IT HAS BALANCED GROUPS EXACTLY...IF USING MINI BATCHES, NEED TO 
+        ######################################## ADD LOGIC SO EVEN THE MINI BATCHES ARE BALANCED
+
+        data = batch[0] # SEE get_item of dataset... img, y, g, p (input, target, group, place)
+        target = batch[1]
+        group = batch[2] ##########################HERE CAN TEST WITH CONFIG IF DATALOADER REWEIGHT STUFF IS WORKING TO GIVE BATCHES WITH EQUAL GROUP SIZES.
+        place = batch[3]
+        print(n_classes)
+        print(data.shape)
+        print(target.shape)
+        print(torch.unique(target)) #1 if correct pred, 0 else
+        print(group.shape)
+        print(torch.unique(group))
+        print(place.shape)
+        print(torch.unique(place))
+        print(type(batch))
+
+        # Get unique values and their counts using torch.unique()
+        unique_values, counts = torch.unique(group, return_counts=True)
+
+        # Print unique values and their counts
+        for value, count in zip(unique_values, counts):
+            print(f"Value: {value}, Count: {count}")
+
         data, target = data.to(device), target.to(device)
-        print(target)
+        #print(target)
     ###########################DELETE ABOVE AND UNCOMMENT BELOW trainTest.train function....#########################
     ###########################DELETE ABOVE AND UNCOMMENT BELOW trainTest.train function....#########################
     ###########################DELETE ABOVE AND UNCOMMENT BELOW trainTest.train function....#########################
