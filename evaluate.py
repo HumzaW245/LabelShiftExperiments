@@ -119,7 +119,7 @@ def evaluate(config):
 Executing Run (optional: with a custom config)
 '''
 
-#custom_config = 'learning_rate=0.1, epochs=2, train_batch_size=32, printTraining=True'
+#Use by running in command line e.g.: python evaluateSpurious.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
 import argparse
 

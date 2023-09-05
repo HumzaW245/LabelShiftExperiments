@@ -81,9 +81,17 @@ def getTrainTestLoaders(config):
     # valset = WaterBirdsDataset(basedir=basedir, split="val", transform=test_transform)
 
     loader_kwargs = {'batch_size': args.batch_size, 'num_workers': 1, 'pin_memory': True}
+    
+    #Non reweighted so reweighting args are set to False
     train_loader = get_loader(
+        trainset, train=True, reweight_groups=False,
+        reweight_classes=False, reweight_places=False, **loader_kwargs)
+
+    #Reweighted dataset (Only different if config is setup to use reweighting)    
+    train_loader_rw = get_loader(
         trainset, train=True, reweight_groups=args.reweight_groups,
         reweight_classes=args.reweight_classes, reweight_places=args.reweight_places, **loader_kwargs)
+
     test_loader_dict = {}
     for test_name, testset_v in testset_dict.items():
         test_loader_dict[test_name] = get_loader(
@@ -92,4 +100,4 @@ def getTrainTestLoaders(config):
 
     n_classes = trainset.n_classes
 
-    return train_loader, test_loader_dict, n_classes
+    return train_loader, train_loader_rw, test_loader_dict, n_classes

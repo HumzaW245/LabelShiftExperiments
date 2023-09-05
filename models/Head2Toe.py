@@ -16,6 +16,7 @@ import math
 class Net(torch.nn.Module):
     def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead):
         super(Net, self).__init__()
+        self.numSteps = 0
         self.model = models.resnet50(pretrained=True)
 
         self.selected_feature_indices = selected_feature_indices
@@ -223,6 +224,9 @@ class Net(torch.nn.Module):
       self.finetune_backbone = boolVal
       if(self.finetune_backbone == False):
         helper.freezeBackbone(self.model)
+      
+      self.model.fc.weight.requires_grad = True
+      self.model.fc.bias.requires_grad = True
 
     def getOutputHeadLayerWeights(self):
       return self.newOutputHead.weight #Don't use .weight.data because .weight will track operations in computation graph which is important when doing backprop with regularization loss
@@ -232,3 +236,9 @@ class Net(torch.nn.Module):
       
     def getLayersWithRangesOfIndicesAfterProcessing(self):
       return self.layersWithRangesOfIndicesAfterProcessing
+
+    def getNumSteps(self):
+      return self.numSteps
+
+    def setNumSteps(self, newVal):
+      self.numSteps = newVal
