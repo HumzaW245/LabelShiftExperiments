@@ -27,21 +27,23 @@ class Net(torch.nn.Module):
         classifier.bias.requires_grad = True
         self.model.fc = classifier  # Replace the classifier layer
 
-        # Load the Checkpoint
-        checkpointDirectory = spuriousConfig.checkpointDirectory
-        checkpoint = torch.load(checkpointDirectory + '/final_checkpoint.pt')
-
-        # Load the model weights from the checkpoint
-        model_state_dict = self.model.state_dict()
-        for key in checkpoint.keys():
-            if key in model_state_dict:
-                model_state_dict[key] = checkpoint[key]
-
-        # Load the modified state dict into the model
-        self.model.load_state_dict(model_state_dict)
 
         # IF WANT TO USE PRETRAINED CHECKPOINT MODEL
         if spuriousConfig.resume is not None:
+          
+          # Load the Checkpoint
+          checkpointDirectory = spuriousConfig.checkpointDirectory
+          checkpoint = torch.load(checkpointDirectory + '/final_checkpoint.pt')
+
+          # Load the model weights from the checkpoint
+          model_state_dict = self.model.state_dict()
+          for key in checkpoint.keys():
+              if key in model_state_dict:
+                  model_state_dict[key] = checkpoint[key]
+
+          # Load the modified state dict into the model
+          self.model.load_state_dict(model_state_dict)
+          
           print('Resuming from checkpoint at {}...'.format(spuriousConfig.resume))
           checkpoint = torch.load(spuriousConfig.resume)
           model.load_state_dict(checkpoint)

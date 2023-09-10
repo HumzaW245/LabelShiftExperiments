@@ -11,13 +11,13 @@ import wandb
 
 def evaluate(config):
   
-  #Making sure config dictionary is update to have values expected
-  print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
-
-
   wandb.login()
   #------------------------------------------------------>INITIALIZING WANDB PROJECT NAME AND NAME OF RUN <--------------------------------------------------
   wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
+
+  #Making sure config dictionary is update to have values expected
+  print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
+
 
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")

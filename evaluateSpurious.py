@@ -1,5 +1,5 @@
 import configs.helper as helper
-import configs.trainTestConfig as trainTest
+import configs.spuriousTrainTestConfig as trainTest
 import models.SpuriousLinear as spuriousLinear
 import models.SpuriousH2T as spuriousH2T
 import torch.nn as nn
@@ -11,13 +11,13 @@ import wandb
 
 def evaluate(config):
   
-  #Making sure config dictionary is update to have values expected
-  print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
-
-
   wandb.login()
   #------------------------------------------------------>INITIALIZING WANDB PROJECT NAME AND NAME OF RUN <--------------------------------------------------
   wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
+
+  #Making sure config dictionary is update to have values expected
+  print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
+
 
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
@@ -118,7 +118,7 @@ def evaluate(config):
         
   
   print(f'setting optimizer using config.py')
-  optimizer = helper.getOptimizer(model, spuriousConfig)  
+  optimizer = helper.getOptimizer(model, learningConfig)  
   model.to(device)
   print(f"\n\n\n Device is: {device} \n\n\n")
   
@@ -145,7 +145,7 @@ def evaluate(config):
           Groups = {spuriousConfig.reweight_groups}, \
           Places = {spuriousConfig.reweight_places} \n\n")
     
-    for epoch in range(learningConfig.epochs+10):
+    for epoch in range(learningConfig.epochs):
       trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
 
       accs.append(trainTest.test(model, device, test_loader))

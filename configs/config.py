@@ -14,13 +14,13 @@ def get_config(config_string):
             'use_early_conv_phase': False,
             'optimizer': 'adam',
             'learning_rate': 0.1,
-            'weight_decay': 0,
-            'momentum': 0,
+            'weight_decay': 0.0004,
+            'momentum': 0.9,
             'fraction_F': 0.1,
             'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it
-            'epochs': 2,
+            'epochs': 20,
             'num_steps':999999999999, #This is at a max value since only if custom value entered, training will stop updating gradients once number of gradient updates exceeded num_steps
             'early_conv_epochs' : 2, # Early Convergence run to get roughly initialized Linear Layer
             'train_batch_size': train_batch_size,
@@ -37,7 +37,7 @@ def get_config(config_string):
             "test_grey_dir": None,
             "test_places_dir": None,
             "output_dir": "/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/logs/",
-            "pretrained_model": False,
+            "pretrained_model": True,
             "reweight_classes": False,
             "reweight_places": False,
             "reweight_groups": False,
@@ -45,9 +45,6 @@ def get_config(config_string):
             "scheduler": False,
             "batch_size": 128,
             'optimizer': 'SGD',
-            "weight_decay": 1e-4,
-            "momentum_decay": 0.9,
-            "init_lr": 0.001,
             "eval_freq": 1,
             "seed": 1,
             "multitask": False,

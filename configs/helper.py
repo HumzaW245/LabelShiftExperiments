@@ -53,15 +53,6 @@ def layersForTopFPctIndicesSelected(selected_feature_indices, layersWithRangesDi
 
 def getOptimizer(model, learningConfig):
   
-  #If checkpointDirectory in the config then it is the spurious config so use its optimizer
-  if 'checkpointDirectory' in learningConfig.keys() and learningConfig.optimizer == 'SGD':
-    args = learningConfig
-    optimizer = torch.optim.SGD(
-    model.parameters(), lr=args.init_lr, momentum=args.momentum_decay, weight_decay=args.weight_decay)
-    return optimizer
-      
-
-
   if learningConfig.optimizer == 'adam':
     optimizer = torch.optim.Adam(
       model.parameters(), 
