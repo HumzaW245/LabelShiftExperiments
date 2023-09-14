@@ -98,6 +98,11 @@ def getTrainTestLoaders(config):
             testset_v, train=False, reweight_groups=None,
             reweight_classes=None, reweight_places=None, **loader_kwargs)
 
+    test_loader_dict_rw = {}
+    for test_name, testset_v in testset_dict.items():
+        test_loader_dict_rw[test_name] = get_loader(
+            testset_v, train=False, reweight_groups=args.reweight_groups,
+            reweight_classes=args.reweight_classes, reweight_places=args.reweight_places, **loader_kwargs)
     n_classes = trainset.n_classes
 
-    return train_loader, train_loader_rw, test_loader_dict, n_classes
+    return train_loader, train_loader_rw, test_loader_dict, test_loader_dict_rw, n_classes

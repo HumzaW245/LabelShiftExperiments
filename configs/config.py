@@ -15,7 +15,7 @@ def get_config(config_string):
             'optimizer': 'adam',
             'learning_rate': 0.1,
             'weight_decay': 0.0004,
-            'momentum': 0.9,
+            'momentum': 0.0,
             'fraction_F': 0.1,
             'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it

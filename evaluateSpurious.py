@@ -25,11 +25,16 @@ def evaluate(config):
 
 
   #Get dataloaders and n_classes ***ALSO TEST LOADERS ARE RETURNS AS DICT CONTATINING TEST AND VALIDATION LOADERS
-  train_loader, train_loader_rw, test_loader_dict, n_classes = pipeLine.getTrainTestLoaders(config)
+  train_loader, train_loader_rw, test_loader_dict, test_loader_dict_rw, n_classes = pipeLine.getTrainTestLoaders(config)
   
-  #For test and validation, don't need a separate loader for reweighted and non reweighted dataset. Those are only for training
+  #For test and validation, using a separate balanced dataset to get test accuracy after DFR phase
   test_loader = test_loader_dict['wb']
   validation_loader = test_loader_dict['wb_val']
+
+  test_loader_rw = test_loader_dict_rw['wb']
+  validation_loader_rw = test_loader_dict_rw['wb_val']
+
+  
 
   
   accs = []
@@ -126,6 +131,7 @@ def evaluate(config):
   for epoch in range(learningConfig.epochs):
     trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
 
+    print(f'\n\n Finished a training phase, Testing accuracy using test_loader')
     accs.append(trainTest.test(model, device, test_loader))
   
   #Reset model num steps
@@ -139,7 +145,7 @@ def evaluate(config):
     
     accs = [] #Tracking accuracies of new training with reweighting
     model.setFinetuneBackbone(False)
-    print("\n\nFinetune of backbone has been set to False\n\n \
+    print(f"\n\nFinetune of backbone has been set to False\n\n \
           STARTING DFR Phase with reweighting set for \
           Class = {spuriousConfig.reweight_classes}, \
           Groups = {spuriousConfig.reweight_groups}, \
@@ -148,7 +154,8 @@ def evaluate(config):
     for epoch in range(learningConfig.epochs):
       trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
 
-      accs.append(trainTest.test(model, device, test_loader))
+      print(f'\n\n Finished DFR training phase, Testing accuracy using REWEIGHTED test_loader so accuracy is based on a balanced dataset too')
+      accs.append(trainTest.test(model, device, test_loader_rw))
     
     #Reset model num steps
     model.setNumSteps(0)

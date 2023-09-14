@@ -54,39 +54,37 @@ class BalancedBatchSampler(BatchSampler):
         return (indices_per_class, indices_per_group, indices_per_place)
 
     def __iter__(self):
-        for _ in range(self.num_batches):
-            batch_indices = []
+        batch_indices = []
 
-            
-            if self.reweight_groups:
-                # Select samples from balanced groups
-                for group, indices_list in self.indices_per_group.items():
-                    indices = torch.tensor(indices_list)
-                    indicesToAddFromGroup = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_group)]] #Divide batch size by number of categories so e.g. 4 groups and 128 batch size then divide 128/4 = 32 per group
-                    #print(f'These are how many indices there are in total for group {group} being added to the batch_indices variable= {len(indicesToAddFromGroup)} OUT OF TOTAL INDICES FOR GROUP ={len(indices)}')
-                    batch_indices.extend(indicesToAddFromGroup)
+        if self.reweight_groups:
+            # Select samples from balanced groups
+            for group, indices_list in self.indices_per_group.items():
+                indices = torch.tensor(indices_list)
+                indicesToAddFromGroup = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_group)]] #Divide batch size by number of categories so e.g. 4 groups and 128 batch size then divide 128/4 = 32 per group
+                #print(f'These are how many indices there are in total for group {group} being added to the batch_indices variable= {len(indicesToAddFromGroup)} OUT OF TOTAL INDICES FOR GROUP ={len(indices)}')
+                batch_indices.extend(indicesToAddFromGroup)
 
-            elif self.reweight_classes:
-                # Select samples from balanced classes
-                for target, indices_list in self.indices_per_class.items():
-                    indices = torch.tensor(indices_list)
-                    indicesToAddFromClass = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_class)]] #Divide batch size by number of categories so e.g. 4 CLASSes and 128 batch size then divide 128/4 = 32 per class
-                    #print(f'These are how many indices there are in total for class {target} being added to the batch_indices variable= {len(indicesToAddFromClass)} OUT OF TOTAL INDICES FOR CLASS ={len(indices)}')
-                    batch_indices.extend(indicesToAddFromClass)
+        elif self.reweight_classes:
+            # Select samples from balanced classes
+            for target, indices_list in self.indices_per_class.items():
+                indices = torch.tensor(indices_list)
+                indicesToAddFromClass = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_class)]] #Divide batch size by number of categories so e.g. 4 CLASSes and 128 batch size then divide 128/4 = 32 per class
+                #print(f'These are how many indices there are in total for class {target} being added to the batch_indices variable= {len(indicesToAddFromClass)} OUT OF TOTAL INDICES FOR CLASS ={len(indices)}')
+                batch_indices.extend(indicesToAddFromClass)
 
-            elif self.reweight_places:
-                # Select samples from balanced places
-                for place, indices_list in self.indices_per_place.items():
-                    indices = torch.tensor(indices_list)
-                    indicesToAddFromPlace = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_place)]] #Divide batch size by number of categories so e.g. 4 places and 128 batch size then divide 128/4 = 32 per place
-                    #print(f'These are how many indices there are in total for place {place} being added to the batch_indices variable= {len(indicesToAddFromPlace)} OUT OF TOTAL INDICES FOR PLACE ={len(indices)}')
-                    batch_indices.extend(indicesToAddFromPlace)
-            else:
-                # Select samples without reweighting
-                batch_indices = torch.randperm(self.total_samples).tolist()
+        elif self.reweight_places:
+            # Select samples from balanced places
+            for place, indices_list in self.indices_per_place.items():
+                indices = torch.tensor(indices_list)
+                indicesToAddFromPlace = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_place)]] #Divide batch size by number of categories so e.g. 4 places and 128 batch size then divide 128/4 = 32 per place
+                #print(f'These are how many indices there are in total for place {place} being added to the batch_indices variable= {len(indicesToAddFromPlace)} OUT OF TOTAL INDICES FOR PLACE ={len(indices)}')
+                batch_indices.extend(indicesToAddFromPlace)
+        else:
+            # Select samples without reweighting
+            batch_indices = torch.randperm(self.total_samples).tolist()
 
-            for i in range(0, len(batch_indices), self.batch_size):
-                yield batch_indices[i:i+self.batch_size]
+        for i in range(0, len(batch_indices), self.batch_size):
+            yield batch_indices[i:i+self.batch_size]
 
     def __len__(self):
         return self.num_batches
