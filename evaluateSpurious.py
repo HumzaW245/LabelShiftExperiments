@@ -34,10 +34,6 @@ def evaluate(config):
   test_loader_rw = test_loader_dict_rw['wb']
   validation_loader_rw = test_loader_dict_rw['wb_val']
 
-  
-
-  
-  accs = []
 
   learningConfig = config.learning
   spuriousConfig = config.spuriousConfig
@@ -54,15 +50,29 @@ def evaluate(config):
   if(learningConfig.useH2T): 
     
     '''
-    =============================Phase 1 to get scores and top scores as indices for phase2 to use as linear head===========================
+    PHASE 0: SpuriousFeatures with Head2Toe approach first needs to finetune pretrained model on target domain unbalanced dataset
     '''
-    model = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, learningConfig.concatLayerSize, True, None, None) #This model is the initialization of phase1 to calculate scores so we don't use finetuning in this step
+    custome_preTrainedModel = helper.getModelAfterLinearRun(config, device, n_classes, learningConfig, train_loader, finetune_backbone = True)
+
+    '''
+    Phase 1: Getting selected_features_indices
+    We get scores and top scores as indices for phase2 to use as linear head===========================
+    '''
+    model = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, learningConfig.concatLayerSize, True, None, None, custome_preTrainedModel) #This model is the initialization of phase1 to calculate scores so we don't use finetuning in this step
     print(f'To determine scores and select features, this phase has finetune backbone set to {model.finetune_backbone}')
 
-    optimizer = helper.getOptimizer(model, learningConfig)
+    print(f'setting new optimizer using config.py')
+    optimizer = helper.getOptimizer(model, learningConfig)  
+    
+    if learningConfig.scheduler:
+      scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+          optimizer, T_max=learningConfig.epochs)
     model.to(device)
     for epoch in range(learningConfig.epochs):
       trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+      if learningConfig.scheduler:
+        scheduler.step()
+    
     #Reset model num steps
     model.setNumSteps(0)
 
@@ -92,14 +102,21 @@ def evaluate(config):
     '''
 
     if learningConfig.use_early_conv_phase and learningConfig.finetune_backbones == True: 
-      model_early_conv = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, None) #FT can be T/F since H2T can be with or without FT
+      model_early_conv = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, None, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
       
 
-      optimizer = helper.getOptimizer(model_early_conv, learningConfig)
+      print(f'setting new optimizer using config.py')
+      optimizer = helper.getOptimizer(model_early_conv, learningConfig)  
+      
+      if learningConfig.scheduler:
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=learningConfig.epochs)
       model_early_conv.to(device)
       for epoch in range(learningConfig.early_conv_epochs): #Different epochs for early convergence phase (low since want a roughly trained outputHead)
         trainTest.train(model_early_conv, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
-      
+        if learningConfig.scheduler:
+          scheduler.step()
+          
       #Reset model num steps
       model.setNumSteps(0)
 
@@ -112,38 +129,18 @@ def evaluate(config):
     '''
     =============================Phase 2: model INITIALIZATION with selected features from phase 1===========================
     '''
-    model = spuriousH2T.Net(config, n_classes, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, custom_outputHead) #FT can be T/F since H2T can be with or without FT
+    model = spuriousH2T.Net(config, n_classes, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, custom_outputHead, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
     print(f'With selected features, this next phase has finetune backbone set to {model.finetune_backbone}') 
  
 
   # Linear Model
   else:
-    print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {learningConfig.finetune_backbones}-----------------------\n\n\n")
-    model = spuriousLinear.Net(config, n_classes, learningConfig.finetune_backbones)
-        
-  
-  print(f'setting optimizer using config.py')
-  optimizer = helper.getOptimizer(model, learningConfig)  
-  model.to(device)
-  print(f"\n\n\n Device is: {device} \n\n\n")
-  
-
-  for epoch in range(learningConfig.epochs):
-    trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
-
-    print(f'\n\n Finished a training phase, Testing accuracy using test_loader')
-    accs.append(trainTest.test(model, device, test_loader))
-  
-  #Reset model num steps
-  model.setNumSteps(0)
-  accs = np.array(accs)
-  print(f'Accuracy before DFR: {accs.mean()}')
+    model = helper.getModelAfterLinearRun(config, device, n_classes, learningConfig, train_loader, finetune_backbone = learningConfig.finetune_backbones)
 
 
   # DFR Training. 
   if spuriousConfig.reweight_classes or spuriousConfig.reweight_groups or spuriousConfig.reweight_places:
     
-    accs = [] #Tracking accuracies of new training with reweighting
     model.setFinetuneBackbone(False)
     print(f"\n\nFinetune of backbone has been set to False\n\n \
           STARTING DFR Phase with reweighting set for \
@@ -151,17 +148,25 @@ def evaluate(config):
           Groups = {spuriousConfig.reweight_groups}, \
           Places = {spuriousConfig.reweight_places} \n\n")
     
+    print(f'setting new optimizer using config.py')
+    optimizer = helper.getOptimizer(model, learningConfig)  
+    
+    if learningConfig.scheduler:
+      scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+          optimizer, T_max=learningConfig.epochs)
+          
     for epoch in range(learningConfig.epochs):
       trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
-
-      print(f'\n\n Finished DFR training phase, Testing accuracy using REWEIGHTED test_loader so accuracy is based on a balanced dataset too')
-      accs.append(trainTest.test(model, device, test_loader_rw))
+      if learningConfig.scheduler:
+        scheduler.step()
+      
+    print(f'\n\n Finished DFR training phase, Testing accuracy using REWEIGHTED test_loader so accuracy is based on a balanced dataset too')
+    #print(f'Test Accuracy at epoch')
+    trainTest.test(model, device, test_loader_rw)
     
     #Reset model num steps
     model.setNumSteps(0)
     
-    accs = np.array(accs)
-    print(f'Accuracy after DFR: {accs.mean()}') 
 
 
 '''

@@ -12,10 +12,11 @@ def get_config(config_string):
         'learning': ConfigDict({
             'useH2T': False,
             'use_early_conv_phase': False,
-            'optimizer': 'adam',
-            'learning_rate': 0.1,
+            'optimizer': 'SGD',
+            'scheduler': "",
+            'learning_rate': 0.001,
             'weight_decay': 0.0004,
-            'momentum': 0.0,
+            'momentum': 0.9,
             'fraction_F': 0.1,
             'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
@@ -42,7 +43,6 @@ def get_config(config_string):
             "reweight_places": False,
             "reweight_groups": False,
             "augment_data": False,
-            "scheduler": False,
             "batch_size": 128,
             'optimizer': 'SGD',
             "eval_freq": 1,

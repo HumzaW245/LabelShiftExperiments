@@ -14,7 +14,7 @@ from typing import Dict, Iterable, Callable
 from torch import Tensor
 import math
 class Net(torch.nn.Module):
-    def __init__(self, config, n_classes, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead):
+    def __init__(self, config, n_classes, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead, custome_preTrainedModel):
         super(Net, self).__init__()
         self.numSteps = 0
         
@@ -23,7 +23,7 @@ class Net(torch.nn.Module):
 
         spuriousConfig = config.spuriousConfig
         
-        self.model = models.resnet50(pretrained=spuriousConfig.pretrained_model) 
+        self.model = custome_preTrainedModel #We want to use the model after finetuning for target domain dataset instead of default resnet50. This used to be just models.resnet50(pretrained=spuriousConfig.pretrained_model) 
         
         
 

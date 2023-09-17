@@ -27,11 +27,13 @@ which is why this separate trainTest file is created
 def train(model, device, train_loader, optimizer, epoch, learningConfig, display=True):
 
     model.train()
+    correct = 0
     countOfDataProcessed = 0
+    group_accuracy = defaultdict(lambda: {'correct': 0, 'total': 0})
     timeAtStartOfEpoch = datetime.datetime.now()
     #Time before loop
-    print(f'\n TRAINING EPOCH # {epoch}')
-    print("\n\n\n")
+    #print(f'\n TRAINING EPOCH # {epoch}')
+    #print("\n\n\n")
     #assert False
     for batch_idx, batch in enumerate(train_loader):
         #print(f'\n ITERATION NUMBER: {batch_idx}')
@@ -50,7 +52,7 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
         countOfDataProcessed += len(data) # For tracking since sometimes len of dataloader caused issues/inaccurate size when dividing
         target = batch[1]
         #------------------UNCOMMENT BELOW TO PRINT GROUP COUNTS FOR EACH BATCH DURING TRAINING-------------------
-        # group = batch[2] #For spurious datasets (e.g. Waterbirds loader, index 2 and 3 have the group and place for each data point)
+        group = batch[2] #For spurious datasets (e.g. Waterbirds loader, index 2 and 3 have the group and place for each data point)
         
         # group_counts = Counter(group.tolist())
         # # Print the counts for each group in the batch
@@ -59,7 +61,7 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
         #     print(f"Group {group_value}: {count}")
         #------------------UNCOMMENT ABOVE TO PRINT GROUP COUNTS FOR EACH BATCH DURING TRAINING-------------------
             
-        #place = batch[3]
+        place = batch[3]
         
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -86,6 +88,16 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
         loss.backward()
         optimizer.step()
         
+        # Calculate training accuracy for this batch
+        pred = output.max(1, keepdim=True)[1]
+            
+        # Update group-specific accuracy
+        for i in range(len(group)):
+            group_id = group[i].item()
+            correct += pred[i].eq(target[i].view_as(pred[i])).sum().item()
+            group_accuracy[group_id]['correct'] += pred[i].eq(target[i].view_as(pred[i])).sum().item()
+            group_accuracy[group_id]['total'] += 1
+
         #Wandb logging
         wandb.log({"Train Loss Per Batch": loss.item()})
         
@@ -94,9 +106,24 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
             print(f'Train step: {numStepsDone} --- Loss = {loss.item()}')
         #torch.cuda.empty_cache() # Necessary for efficiency and cuda errors. Maybe even put somewhere in train function for each batch
 
+    
+    accuracyTrain = 100. * correct / countOfDataProcessed
+    
+    wandb.log({"Train Loss Per Epoch": loss.item(), "Train Accuracy Per Epoch": accuracyTrain})
+
     trainTime = datetime.datetime.now() - timeAtStartOfEpoch
     if display and numStepsDone <= learningConfig.num_steps:
-      print(f'Train Epoch: {epoch}\tLoss: {loss.item()} \t- Training time for epoch: {trainTime}')
+        print(f'Train Epoch: {epoch}\tLoss: {loss.item()} - Accuracy: {correct}/{countOfDataProcessed} ({accuracyTrain}%)\t- Training time for epoch: {trainTime}')
+
+        # Log group-specific accuracies
+        for group_id, group_data in group_accuracy.items():
+            group_correct = group_data['correct']
+            group_total = group_data['total']
+            group_accuracy_percentage = 100. * group_correct / group_total
+            print(f'Group {group_id}: Accuracy: {group_correct}/{group_total} ({group_accuracy_percentage:.2f}%)')
+            wandb.log({f"Train Accuracy for group {group_id} Per Epoch": group_accuracy_percentage})
+
+        
 
 
 def test(model, device, test_loader):

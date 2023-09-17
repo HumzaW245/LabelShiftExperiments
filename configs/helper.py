@@ -1,5 +1,10 @@
 import torch
 import matplotlib.pyplot as plt
+import configs.spuriousTrainTestConfig as trainTest
+import models.SpuriousLinear as spuriousLinear
+import torch.nn as nn
+import torch
+import numpy as np
 def numUniqueClasses(datasetName):
 
   datasetsClasses = {'SVHN': 10, 'Flowers102': 102, 'EuroSAT': 10, 'CIFAR100': 100}
@@ -92,4 +97,37 @@ def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningC
   
   # Save the plot as an image file
   plt.savefig('layersUsedForTopFPctIndicesSelected.png')
+
+def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, finetune_backbone):
+  print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {finetune_backbones}-----------------------\n\n\n")
+  model = spuriousLinear.Net(config, n_classes, finetune_backbone)
+      
+  '''
+  Using the initialized linear model, the code below will do the first 
+  phase of training on the unbalanced dataset. 
+  '''
+  print(f'setting new optimizer using config.py')
+  optimizer = helper.getOptimizer(model, learningConfig)  
+  
+  if learningConfig.scheduler:
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=learningConfig.epochs)
+
+  
+  model.to(device)
+  print(f"\n\n\n Device is: {device} \n\n\n")
+  
+
+  for epoch in range(learningConfig.epochs):
+    trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+    if learningConfig.scheduler:
+      scheduler.step()
+
+  print(f'\n\n Finished a linear run training phase, Testing accuracy using test_loader')
+  trainTest.test(model, device, test_loader)
+  
+  #Reset model num steps
+  model.setNumSteps(0)
+  return model
+
 

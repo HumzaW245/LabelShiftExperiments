@@ -22,7 +22,7 @@ class Net(torch.nn.Module):
         #New output head
         in_features = self.model.fc.in_features #The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True) so storing the 2048 and replacing this to map from 2048 to numClasses for target task ====can see the fc layer like this: backbone = models.resnet50(pretrained=True) => print(backbone.fc)
         targetTaskOutFeatures = n_classes
-        classifier = nn.Linear(in_features, targetTaskOutFeatures, bias=True)  # Create a new classifier
+        classifier = nn.Linear(in_features, targetTaskOutFeatures)  # Create a new classifier
         classifier.weight.requires_grad = True
         classifier.bias.requires_grad = True
         self.model.fc = classifier  # Replace the classifier layer
