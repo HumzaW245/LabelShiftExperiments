@@ -52,7 +52,7 @@ def evaluate(config):
     '''
     PHASE 0: SpuriousFeatures with Head2Toe approach first needs to finetune pretrained model on target domain unbalanced dataset
     '''
-    custome_preTrainedModel = helper.getModelAfterLinearRun(config, device, n_classes, learningConfig, train_loader, finetune_backbone = True)
+    custome_preTrainedModel = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = True)
 
     '''
     Phase 1: Getting selected_features_indices
@@ -135,7 +135,7 @@ def evaluate(config):
 
   # Linear Model
   else:
-    model = helper.getModelAfterLinearRun(config, device, n_classes, learningConfig, train_loader, finetune_backbone = learningConfig.finetune_backbones)
+    model = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = learningConfig.finetune_backbones)
 
 
   # DFR Training. 

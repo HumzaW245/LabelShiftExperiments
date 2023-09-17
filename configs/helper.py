@@ -98,8 +98,8 @@ def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningC
   # Save the plot as an image file
   plt.savefig('layersUsedForTopFPctIndicesSelected.png')
 
-def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, finetune_backbone):
-  print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {finetune_backbones}-----------------------\n\n\n")
+def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone):
+  print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {finetune_backbone}-----------------------\n\n\n")
   model = spuriousLinear.Net(config, n_classes, finetune_backbone)
       
   '''
@@ -107,7 +107,7 @@ def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_load
   phase of training on the unbalanced dataset. 
   '''
   print(f'setting new optimizer using config.py')
-  optimizer = helper.getOptimizer(model, learningConfig)  
+  optimizer = getOptimizer(model, learningConfig)  
   
   if learningConfig.scheduler:
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
