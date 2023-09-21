@@ -94,10 +94,21 @@ class BalancedBatchSampler(BatchSampler):
         
 
     def __iter__(self):
-        for i in range(0, self.total_samples, self.batch_size):
+        if self.reweight_groups or self.reweight_classes or self.reweight_places:
+
+            for i in range(0, self.total_samples, self.batch_size):
+                batch_indices = self._get_batch_indices_per_X()
+                batchToReturn = batch_indices
+                
+                #print(f'\n\nbatch PULLED with batch_indices len = {len(batch_indices)} and batchToReturn = {batchToReturn}\n\n')
+                yield batchToReturn
+        else:
             batch_indices = self._get_batch_indices_per_X()
-            #print(f'\n\nbatch PULLED with batch_indices len = {len(batch_indices)} and batch_indices = {batch_indices}\n\n')
-            yield batch_indices
+            for i in range(0, self.total_samples, self.batch_size):
+                batchToReturn = batch_indices[i:i+self.batch_size]
+                #print(f'\n\nbatch PULLED with batch_indices len = {len(batch_indices)} and batchToReturn = {batchToReturn}\n\n')
+                yield batchToReturn
+
         
 
     def __len__(self):
