@@ -53,14 +53,20 @@ class BalancedBatchSampler(BatchSampler):
 
         return (indices_per_class, indices_per_group, indices_per_place)
 
-    def __iter__(self):
-        batch_indices = []
+    '''
+    _get_indices_per_X has all the indices perX (e.g. all indices per group are returned)
 
+    This is just to generate a batch of them every time a batch needs to be returned (yielded in __iter__) 
+
+    ************IF DONT WANT TO REUSE SAMPLES WHEN MAKING BATCHES, after batch_indices.extend(indicesToAddFromX) in the for loop in each if/elif, put a function to remove(indicesToAddFromX from self.indices_per_group)
+    '''
+    def _get_batch_indices_per_X(self):
+        batch_indices = []
         if self.reweight_groups:
             # Select samples from balanced groups
             for group, indices_list in self.indices_per_group.items():
                 indices = torch.tensor(indices_list)
-                indicesToAddFromGroup = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_group)]] #Divide batch size by number of categories so e.g. 4 groups and 128 batch size then divide 128/4 = 32 per group
+                indicesToAddFromGroup = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_group)]].tolist() #Divide batch size by number of categories so e.g. 4 groups and 128 batch size then divide 128/4 = 32 per group
                 #print(f'These are how many indices there are in total for group {group} being added to the batch_indices variable= {len(indicesToAddFromGroup)} OUT OF TOTAL INDICES FOR GROUP ={len(indices)}')
                 batch_indices.extend(indicesToAddFromGroup)
 
@@ -68,7 +74,7 @@ class BalancedBatchSampler(BatchSampler):
             # Select samples from balanced classes
             for target, indices_list in self.indices_per_class.items():
                 indices = torch.tensor(indices_list)
-                indicesToAddFromClass = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_class)]] #Divide batch size by number of categories so e.g. 4 CLASSes and 128 batch size then divide 128/4 = 32 per class
+                indicesToAddFromClass = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_class)]].tolist() #Divide batch size by number of categories so e.g. 4 CLASSes and 128 batch size then divide 128/4 = 32 per class
                 #print(f'These are how many indices there are in total for class {target} being added to the batch_indices variable= {len(indicesToAddFromClass)} OUT OF TOTAL INDICES FOR CLASS ={len(indices)}')
                 batch_indices.extend(indicesToAddFromClass)
 
@@ -76,15 +82,23 @@ class BalancedBatchSampler(BatchSampler):
             # Select samples from balanced places
             for place, indices_list in self.indices_per_place.items():
                 indices = torch.tensor(indices_list)
-                indicesToAddFromPlace = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_place)]] #Divide batch size by number of categories so e.g. 4 places and 128 batch size then divide 128/4 = 32 per place
+                indicesToAddFromPlace = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_place)]].tolist() #Divide batch size by number of categories so e.g. 4 places and 128 batch size then divide 128/4 = 32 per place
                 #print(f'These are how many indices there are in total for place {place} being added to the batch_indices variable= {len(indicesToAddFromPlace)} OUT OF TOTAL INDICES FOR PLACE ={len(indices)}')
                 batch_indices.extend(indicesToAddFromPlace)
+
         else:
             # Select samples without reweighting
             batch_indices = torch.randperm(self.total_samples).tolist()
 
-        for i in range(0, len(batch_indices), self.batch_size):
-            yield batch_indices[i:i+self.batch_size]
+        return batch_indices
+        
+
+    def __iter__(self):
+        for i in range(0, self.total_samples, self.batch_size):
+            batch_indices = self._get_batch_indices_per_X()
+            #print(f'\n\nbatch PULLED with batch_indices len = {len(batch_indices)} and batch_indices = {batch_indices}\n\n')
+            yield batch_indices
+        
 
     def __len__(self):
         return self.num_batches

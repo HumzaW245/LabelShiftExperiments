@@ -225,8 +225,10 @@ class Net(torch.nn.Module):
       if(self.finetune_backbone == False):
         helper.freezeBackbone(self.model)
       
-      self.model.fc.weight.requires_grad = True
-      self.model.fc.bias.requires_grad = True
+      #There is no  model.fc (set to Identity()) for h2t since output head Linear layer is separate from self.model which contains only pretrained model (backbone only)
+      #So no need for below requires grad part
+      #self.model.fc.weight.requires_grad = True
+      #self.model.fc.bias.requires_grad = True
 
     def getOutputHeadLayerWeights(self):
       return self.newOutputHead.weight #Don't use .weight.data because .weight will track operations in computation graph which is important when doing backprop with regularization loss

@@ -135,7 +135,7 @@ def test(model, device, test_loader):
     
     startTime = datetime.datetime.now()
     with torch.no_grad():
-        for batch in test_loader:
+        for batch_idx, batch in enumerate(test_loader):
             data = batch[0]
             target = batch[1]
             group = batch[2]

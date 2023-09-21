@@ -129,7 +129,9 @@ def evaluate(config):
     '''
     =============================Phase 2: model INITIALIZATION with selected features from phase 1===========================
     '''
-    model = spuriousH2T.Net(config, n_classes, learningConfig.finetune_backbones, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, custom_outputHead, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
+    # NOTE: The spurious paper suggested that only retraining the last layer is effective when doing DFR
+    # So always setting finetune backbones to False here
+    model = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, custom_outputHead, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
     print(f'With selected features, this next phase has finetune backbone set to {model.finetune_backbone}') 
  
 
@@ -140,6 +142,7 @@ def evaluate(config):
 
   # DFR Training. 
   if spuriousConfig.reweight_classes or spuriousConfig.reweight_groups or spuriousConfig.reweight_places:
+    print('-----------------------------------------------DFR STARTING-------------------------------------------------------')
     
     model.setFinetuneBackbone(False)
     print(f"\n\nFinetune of backbone has been set to False\n\n \
@@ -154,15 +157,16 @@ def evaluate(config):
     if learningConfig.scheduler:
       scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
           optimizer, T_max=learningConfig.epochs)
-          
+    
+    model.to(device)      
     for epoch in range(learningConfig.epochs):
       trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
       
-    print(f'\n\n Finished DFR training phase, Testing accuracy using REWEIGHTED test_loader so accuracy is based on a balanced dataset too')
     #print(f'Test Accuracy at epoch')
-    trainTest.test(model, device, test_loader_rw)
+    print(f'Using validation_loader for DFR testing phase')
+    trainTest.test(model, device, validation_loader_rw)
     
     #Reset model num steps
     model.setNumSteps(0)
