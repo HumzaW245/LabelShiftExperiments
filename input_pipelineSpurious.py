@@ -48,8 +48,8 @@ def getTrainTestLoaders(config):
 
     # Data
     target_resolution = (224, 224)
-    train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=args.augment_data)
-    test_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=args.augment_data)
+    train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+    test_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
 
     trainset = WaterBirdsDataset(basedir=basedir, split="train", transform=train_transform)
     testset_dict = {

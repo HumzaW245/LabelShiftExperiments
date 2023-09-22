@@ -26,12 +26,15 @@ python evaluateSpurious.py \
  learning.scheduler=cosine_lr_scheduler,
  learning.learning_rate=0.003,
  learning.weight_decay=0.0004,
- learning.epochs=22,
+ learning.epochs=100,
+ learning.DFRepochs=5,
  spuriousConfig.batch_size=32, 
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
- spuriousConfig.augment_data=True, 
+ spuriousConfig.augment_data=True,  
+ spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
+
 wait
 
 

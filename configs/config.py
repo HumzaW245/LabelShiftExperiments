@@ -22,6 +22,7 @@ def get_config(config_string):
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it
             'epochs': 20,
+            'DFRepochs': 2,
             'num_steps':999999999999, #This is at a max value since only if custom value entered, training will stop updating gradients once number of gradient updates exceeded num_steps
             'early_conv_epochs' : 2, # Early Convergence run to get roughly initialized Linear Layer
             'train_batch_size': train_batch_size,
@@ -43,6 +44,7 @@ def get_config(config_string):
             "reweight_places": False,
             "reweight_groups": False,
             "augment_data": False,
+            "custom_data_transform": "default",
             "batch_size": 128,
             'optimizer': 'SGD',
             "eval_freq": 1,

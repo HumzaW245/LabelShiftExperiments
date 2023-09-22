@@ -7,6 +7,8 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, BatchSampler
 from torch.utils.data.sampler import WeightedRandomSampler
 
+from WaterbirdsData.data_transforms import AugWaterbirdsCelebATransform
+
 
 class BalancedBatchSampler(BatchSampler):
     def __init__(self, dataset, reweight_classes=False, reweight_groups=False, reweight_places=False, batch_size=0):
@@ -157,28 +159,35 @@ class WaterBirdsDataset(Dataset):
         return img, y, g, p
 
 
-def get_transform_cub(target_resolution, train, augment_data):
-    scale = 256.0 / 224.0
+def get_transform_cub(target_resolution, train, augment_data, custom_data_transform):
 
-    if (not train) or (not augment_data):
-        # Resizes the image to a slightly larger square then crops the center.
-        transform = transforms.Compose([
-            transforms.Resize((int(target_resolution[0]*scale), int(target_resolution[1]*scale))),
-            transforms.CenterCrop(target_resolution),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
+    if custom_data_transform == "AugWaterbirdsCelebATransform":
+        print(f'\n\n USING CUSTOM DATA TRANSFORM {custom_data_transform}\n\n')
+        transform = AugWaterbirdsCelebATransform(train)
     else:
-        transform = transforms.Compose([
-            transforms.RandomResizedCrop(
-                target_resolution,
-                scale=(0.7, 1.0),
-                ratio=(0.75, 1.3333333333333333),
-                interpolation=2),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
+        print(f'\n\n USING DEFAULT DATA TRANSFORM')
+        
+        scale = 256.0 / 224.0
+
+        if (not train) or (not augment_data):
+            # Resizes the image to a slightly larger square then crops the center.
+            transform = transforms.Compose([
+                transforms.Resize((int(target_resolution[0]*scale), int(target_resolution[1]*scale))),
+                transforms.CenterCrop(target_resolution),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+        else:
+            transform = transforms.Compose([
+                transforms.RandomResizedCrop(
+                    target_resolution,
+                    scale=(0.7, 1.0),
+                    ratio=(0.75, 1.3333333333333333),
+                    interpolation=2),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
     return transform
 
 

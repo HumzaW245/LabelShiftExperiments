@@ -159,7 +159,7 @@ def evaluate(config):
           optimizer, T_max=learningConfig.epochs)
     
     model.to(device)      
-    for epoch in range(learningConfig.epochs):
+    for epoch in range(learningConfig.DFRepochs):
       trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
