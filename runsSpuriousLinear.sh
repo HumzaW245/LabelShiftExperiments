@@ -19,14 +19,14 @@ source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/to
 python evaluateSpurious.py \
 --config_string \
 "dataset=waterbirds
- runTypeNameForWandB=SpuriousLin-With-DFR,
+ runTypeNameForWandB=SpuriousLin-With-DFRdoneOnValLoader,
  learning.useH2T=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
- learning.learning_rate=0.003,
+ learning.learning_rate=0.0005,
  learning.weight_decay=0.0004,
- learning.epochs=100,
+ learning.epochs=40,
  learning.DFRepochs=5,
  spuriousConfig.batch_size=32, 
  spuriousConfig.reweight_groups=True, 

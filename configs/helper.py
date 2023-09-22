@@ -122,9 +122,8 @@ def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_load
     trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
     if learningConfig.scheduler:
       scheduler.step()
-
-  print(f'\n\n Finished a linear run training phase, Testing accuracy using test_loader')
-  trainTest.test(model, device, test_loader)
+    #print(f'\n\n Finished a linear run training phase, Testing accuracy using test_loader')
+    trainTest.test(model, device, test_loader)
   
   #Reset model num steps
   model.setNumSteps(0)

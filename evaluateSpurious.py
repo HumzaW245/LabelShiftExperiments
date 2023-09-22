@@ -160,13 +160,15 @@ def evaluate(config):
     
     model.to(device)      
     for epoch in range(learningConfig.DFRepochs):
-      trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
+
+      # SEE Table 2 says use validation data for training(https://arxiv.org/pdf/2204.02937.pdf)
+      trainTest.train(model, device, validation_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
       
     #print(f'Test Accuracy at epoch')
     print(f'Using validation_loader for DFR testing phase')
-    trainTest.test(model, device, validation_loader_rw)
+    trainTest.test(model, device, test_loader_rw)
     
     #Reset model num steps
     model.setNumSteps(0)
