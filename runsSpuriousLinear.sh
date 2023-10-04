@@ -24,7 +24,7 @@ python evaluateSpurious.py \
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
- learning.learning_rate=0.0005,
+ learning.learning_rate=0.003,
  learning.weight_decay=0.0004,
  learning.epochs=40,
  learning.DFRepochs=5,
@@ -34,6 +34,24 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True,  
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
+
+# BEST RESULTS Hyperparameters (wandb name of run: (BEST)waterbirds (SpuriousLin-With-DFR))
+# Test Acc AFTER DFR group 0 = 95.467 group 1 = 95.536 group 2 = 95.81 group 3 = 93.956
+# DFRepochs: 5
+# epochs: 40
+# learning_rate: 0.003
+# weight_decay: 0.0004
+# batch_size: 32
+
+
+# MATCHING RESULTS for both before and after DFR Hyperparameters (wandb name of run: (MATCH)waterbirds (SpuriousLin-With-DFR))
+#Test Acc AFTER DFR group 0 = 95.47% group 1 = 94.64% group 2 = 94.78% group 3 = 93.96%
+# DFRepochs: 5
+# epochs: 40
+# learning_rate: 0.001
+# weight_decay: 0.0004
+# batch_size: 32
+
 
 wait
 

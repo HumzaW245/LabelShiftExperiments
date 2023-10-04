@@ -53,8 +53,8 @@ class Net(torch.nn.Module):
 
         # FT backbone
         self.finetune_backbones = finetune_backbones
-        if self.finetune_backbones == False:
-          helper.freezeBackbone(self.model)
+        helper.FTBackbone(self.model, self.finetune_backbones)
+        
           
 
 
@@ -66,9 +66,8 @@ class Net(torch.nn.Module):
       return self.numSteps
 
     def setFinetuneBackbone(self, boolVal):
-      self.finetune_backbone = boolVal
-      if(self.finetune_backbone == False):
-        helper.freezeBackbone(self.model)
+      self.finetune_backbones = boolVal
+      helper.FTBackbone(self.model, self.finetune_backbones)
       
       self.model.fc.weight.requires_grad = True
       self.model.fc.bias.requires_grad = True

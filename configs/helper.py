@@ -11,9 +11,9 @@ def numUniqueClasses(datasetName):
   print(f'dataset {datasetName} has {datasetsClasses[datasetName]} unique classes')
   return datasetsClasses[datasetName]
 
-def freezeBackbone(backbone):
+def FTBackbone(backbone, boolVal):
   for i, param in enumerate(backbone.parameters()):
-    param.requires_grad = False
+    param.requires_grad = boolVal
 
 # model = models.resnet50(pretrained=True)
 # freezeBackbone(model)
@@ -122,7 +122,7 @@ def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_load
     trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
     if learningConfig.scheduler:
       scheduler.step()
-    #print(f'\n\n Finished a linear run training phase, Testing accuracy using test_loader')
+      
     trainTest.test(model, device, test_loader)
   
   #Reset model num steps

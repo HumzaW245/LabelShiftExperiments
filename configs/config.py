@@ -23,6 +23,7 @@ def get_config(config_string):
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it
             'epochs': 20,
             'DFRepochs': 2,
+            'h2tScoreCalcPhaseEpochs': 2,
             'num_steps':999999999999, #This is at a max value since only if custom value entered, training will stop updating gradients once number of gradient updates exceeded num_steps
             'early_conv_epochs' : 2, # Early Convergence run to get roughly initialized Linear Layer
             'train_batch_size': train_batch_size,

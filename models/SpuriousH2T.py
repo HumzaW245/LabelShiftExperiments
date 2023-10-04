@@ -42,8 +42,7 @@ class Net(torch.nn.Module):
         self.model.fc = nn.Identity()  # Replace the classifier layer with Identity since classifier will be separately applied after features chosen are extracted (See forward function)
 
         self.finetune_backbone = finetune_backbone
-        if(self.finetune_backbone == False):
-          helper.freezeBackbone(self.model)
+        helper.FTBackbone(self.model, self.finetune_backbone)
 
         # Apply adaptive pooling to resize the tensor
         self.adaptive_pool1D = nn.AdaptiveAvgPool1d(self.targetSize)
@@ -230,8 +229,8 @@ class Net(torch.nn.Module):
       
     def setFinetuneBackbone(self, boolVal):
       self.finetune_backbone = boolVal
-      if(self.finetune_backbone == False):
-        helper.freezeBackbone(self.model)
+      helper.FTBackbone(self.model, self.finetune_backbone)
+
       
       #There is no  model.fc (set to Identity()) for h2t since output head Linear layer is separate from self.model which contains only pretrained model (backbone only)
       #So no need for below requires grad part

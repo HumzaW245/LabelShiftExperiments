@@ -66,9 +66,9 @@ def evaluate(config):
     
     if learningConfig.scheduler:
       scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-          optimizer, T_max=learningConfig.epochs)
+          optimizer, T_max=learningConfig.h2tScoreCalcPhaseEpochs)
     model.to(device)
-    for epoch in range(learningConfig.epochs):
+    for epoch in range(learningConfig.h2tScoreCalcPhaseEpochs):
       trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
@@ -110,7 +110,7 @@ def evaluate(config):
       
       if learningConfig.scheduler:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=learningConfig.epochs)
+            optimizer, T_max=learningConfig.early_conv_epochs)
       model_early_conv.to(device)
       for epoch in range(learningConfig.early_conv_epochs): #Different epochs for early convergence phase (low since want a roughly trained outputHead)
         trainTest.train(model_early_conv, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
@@ -129,7 +129,7 @@ def evaluate(config):
     '''
     =============================Phase 2: model INITIALIZATION with selected features from phase 1===========================
     '''
-    # NOTE: The spurious paper suggested that only retraining the last layer is effective when doing DFR
+    # NOTE:----------TRYING WITH FT with H2T here so if better, ignore comment to the right---------- The spurious paper suggested that only retraining the last layer is effective when doing DFR
     # So always setting finetune backbones to False here
     model = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, custom_outputHead, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
     print(f'With selected features, this next phase has finetune backbone set to {model.finetune_backbone}') 
@@ -144,7 +144,7 @@ def evaluate(config):
   if spuriousConfig.reweight_classes or spuriousConfig.reweight_groups or spuriousConfig.reweight_places:
     print('-----------------------------------------------DFR STARTING-------------------------------------------------------')
     
-    model.setFinetuneBackbone(False)
+    model.setFinetuneBackbone(True)
     print(f"\n\nFinetune of backbone has been set to False\n\n \
           STARTING DFR Phase with reweighting set for \
           Class = {spuriousConfig.reweight_classes}, \
@@ -156,7 +156,7 @@ def evaluate(config):
     
     if learningConfig.scheduler:
       scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-          optimizer, T_max=learningConfig.epochs)
+          optimizer, T_max=learningConfig.DFRepochs)
     
     model.to(device)      
     for epoch in range(learningConfig.DFRepochs):
@@ -166,8 +166,6 @@ def evaluate(config):
       if learningConfig.scheduler:
         scheduler.step()
       
-    #print(f'Test Accuracy at epoch')
-    print(f'Using validation_loader for DFR testing phase')
     trainTest.test(model, device, test_loader_rw)
     
     #Reset model num steps
