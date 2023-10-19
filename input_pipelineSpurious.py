@@ -15,7 +15,9 @@ import sys
 import json
 from functools import partial
 
-from WaterbirdsData.wb_data import WaterBirdsDataset, get_loader, get_transform_cub, log_data
+from WaterbirdsData.wb_data import WaterBirdsDataset, get_loader_cub, get_transform_cub
+
+from CelebAData.celebA_data import CelebADataset, get_loader_celebA, get_transform_celebA
 
 from WaterbirdsData.utils import Logger, AverageMeter, set_seed, evaluate, get_y_p
 
@@ -44,23 +46,49 @@ def getTrainTestLoaders(config):
     # logger = Logger(os.path.join(args.output_dir, 'log.txt'))
 
     splits = ["train", "test", "val"]
-    basedir = args.data_dir
 
     # Data
     target_resolution = (224, 224)
-    train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-    test_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+    train_transform_wb = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+    test_transform_wb = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
 
-    trainset = WaterBirdsDataset(basedir=basedir, split="train", transform=train_transform)
-    testset_dict = {
-        'wb': WaterBirdsDataset(basedir=args.test_wb_dir, split="test", transform=test_transform),
-        'wb_val': WaterBirdsDataset(basedir=args.test_wb_dir, split="val", transform=test_transform),
-    }
 
-    if not args.predict_place and not (args.test_grey_dir is None):
-        testset_dict['grey'] = WaterBirdsDataset(basedir=args.test_grey_dir, split="test", transform=test_transform)
-    if ((args.predict_place) and not (args.test_places_dir is None)) or args.multitask:
-        testset_dict['places'] = WaterBirdsDataset(basedir=args.test_places_dir, split="test", transform=test_transform)
+    train_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+    test_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
+
+    if args.spuriousDataset == 'Waterbirds':
+        basedir = args.data_dir_wb
+        get_loader = get_loader_cub
+        trainset = WaterBirdsDataset(basedir=basedir, split="train", transform=train_transform_wb)
+        testset_dict = {
+            'wb': WaterBirdsDataset(basedir=args.test_wb_dir, split="test", transform=test_transform_wb),
+            'wb_val': WaterBirdsDataset(basedir=args.test_wb_dir, split="val", transform=test_transform_wb),
+        }
+
+        if not args.predict_place and not (args.test_grey_dir is None):
+            testset_dict['grey'] = WaterBirdsDataset(basedir=args.test_grey_dir, split="test", transform=test_transform_wb)
+        if ((args.predict_place) and not (args.test_places_dir is None)) or args.multitask:
+            testset_dict['places'] = WaterBirdsDataset(basedir=args.test_places_dir, split="test", transform=test_transform_wb)
+
+    
+    #'''
+    #Note: The source code for DFR uses place for code convenience even for celebA instead of gender
+    #This naming difference is also here where we use wb and wb_val for convenience since the original code was written
+    #for waterbirds. This can be cleaned up and names of variables can be generalized later.
+    #'''
+    elif args.spuriousDataset == 'CelebA': 
+        basedir = args.data_dir_celebA
+        get_loader = get_loader_celebA
+        trainset = CelebADataset(basedir=basedir, split="train", transform=train_transform_celebA)
+        testset_dict = {
+            'wb': CelebADataset(basedir=args.test_celebA_dir, split="test", transform=test_transform_celebA),
+            'wb_val': CelebADataset(basedir=args.test_celebA_dir, split="val", transform=test_transform_celebA),
+        }
+
+    else:
+        print(f'\n\n\n\n\n spuriousDataset in config.py NOT Recognized \n\n\n\n')
+        assert False
 
     if args.num_minority_groups_remove > 0:
         print("Removing minority groups")
@@ -77,9 +105,7 @@ def getTrainTestLoaders(config):
         trainset.metadata_df = trainset.metadata_df.iloc[idx]
         print("Final groups", np.bincount(trainset.group_array))
 
-    # testset = WaterBirdsDataset(basedir=basedir, split="test", transform=test_transform)
-    # valset = WaterBirdsDataset(basedir=basedir, split="val", transform=test_transform)
-
+  
     loader_kwargs = {'batch_size': args.batch_size, 'num_workers': 1, 'pin_memory': True}
     
     #Non reweighted so reweighting args are set to False
@@ -104,5 +130,5 @@ def getTrainTestLoaders(config):
             testset_v, train=False, reweight_groups=args.reweight_groups,
             reweight_classes=args.reweight_classes, reweight_places=args.reweight_places, **loader_kwargs)
     n_classes = trainset.n_classes
-
+    print(f'Got all loaders')
     return train_loader, train_loader_rw, test_loader_dict, test_loader_dict_rw, n_classes

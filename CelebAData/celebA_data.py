@@ -7,7 +7,14 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, BatchSampler
 from torch.utils.data.sampler import WeightedRandomSampler
 
-from WaterbirdsData.data_transforms import AugWaterbirdsCelebATransform
+from CelebAData.data_transforms import AugWaterbirdsCelebATransform
+
+
+#------------------------------------------------NOTE--------------------------------------------------------------------------------------------
+#For convenience, since metadata also uses place instead of renaming to gender and because rest of codebase is setup with waterbird variable names, using place for genders here too
+#------------------------------------------------NOTE--------------------------------------------------------------------------------------------
+
+
 
 
 class BalancedBatchSampler(BatchSampler):
@@ -30,7 +37,8 @@ class BalancedBatchSampler(BatchSampler):
 
         #Store indices into corresponding class, group and place
         for idx, item in enumerate(self.dataset):
-            
+            if idx % 10000 == 0:
+                print(f'Index in get_indices_per_X is {idx} and length of dadtaset is {len(self.dataset)}')
             # SEE get_item of dataset... img, y, g, p (input, target, group, place)
             #data = batch[0] //Don't need data, just want indices of target, group, place for when balancing based on 1 of these
             target = item[1] #  Classes is target
@@ -84,9 +92,9 @@ class BalancedBatchSampler(BatchSampler):
             # Select samples from balanced places
             for place, indices_list in self.indices_per_place.items():
                 indices = torch.tensor(indices_list)
-                indicesToAddFromPlace = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_place)]].tolist() #Divide batch size by number of categories so e.g. 4 places and 128 batch size then divide 128/4 = 32 per place
-                #print(f'These are how many indices there are in total for place {place} being added to the batch_indices variable= {len(indicesToAddFromPlace)} OUT OF TOTAL INDICES FOR PLACE ={len(indices)}')
-                batch_indices.extend(indicesToAddFromPlace)
+                indicesToAddFromplace = indices[torch.randperm(len(indices))[:self.batch_size // len(self.indices_per_place)]].tolist() #Divide batch size by number of categories so e.g. 4 places and 128 batch size then divide 128/4 = 32 per place
+                #print(f'These are how many indices there are in total for place {place} being added to the batch_indices variable= {len(indicesToAddFromplace)} OUT OF TOTAL INDICES FOR place ={len(indices)}')
+                batch_indices.extend(indicesToAddFromplace)
 
         else:
             # Select samples without reweighting
@@ -116,20 +124,20 @@ class BalancedBatchSampler(BatchSampler):
     def __len__(self):
         return self.num_batches
 
-class WaterBirdsDataset(Dataset):
+class CelebADataset(Dataset):
     def __init__(self, basedir, split="train", transform=None):
         try:
             split_i = ["train", "val", "test"].index(split)
         except ValueError:
             raise(f"Unknown split {split}")
-        metadata_df = pd.read_csv(os.path.join(basedir, "metadata.csv"))
+        metadata_df = pd.read_csv(os.path.join(basedir, "celeba_metadata.csv"))
         self.metadata_df = metadata_df[metadata_df["split"] == split_i]
         self.basedir = basedir
         self.transform = transform
         self.y_array = self.metadata_df['y'].values
-        self.p_array = self.metadata_df['place'].values
+        self.p_array = self.metadata_df['place'].values 
         self.n_classes = np.unique(self.y_array).size
-        self.confounder_array = self.metadata_df['place'].values
+        self.confounder_array = self.metadata_df['place'].values 
         self.n_places = np.unique(self.confounder_array).size
         self.group_array = (self.y_array * self.n_places + self.confounder_array).astype('int')
         self.n_groups = self.n_classes * self.n_places
@@ -147,7 +155,7 @@ class WaterBirdsDataset(Dataset):
     def __getitem__(self, idx):
         y = self.y_array[idx]
         g = self.group_array[idx]
-        p = self.confounder_array[idx]
+        p = self.confounder_array[idx]  
 
         img_path = os.path.join(self.basedir, self.filename_array[idx])
         img = Image.open(img_path).convert('RGB')
@@ -156,16 +164,31 @@ class WaterBirdsDataset(Dataset):
 
         if self.transform:
             img = self.transform(img)
-        return img, y, g, p
+        return img, y, g, p #p is for place
 
 
-def get_transform_cub(target_resolution, train, augment_data, custom_data_transform):
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+#-----------------------------------some parts of get_transform_celebA may not be same. e.g. not sure if scale should be there or if correct. Maybe just use https://github.com/izmailovpavel/spurious_feature_learning/blob/1a25a2f509ba59e6a3b3d44a7c58a5b9372ab1a0/group_DRO/gdro_data/celebA_dataset.py#L80
+
+def get_transform_celebA(target_resolution, train, augment_data, custom_data_transform):
 
     if custom_data_transform == "AugWaterbirdsCelebATransform":
         print(f'\n\n USING CUSTOM DATA TRANSFORM {custom_data_transform}\n\n')
         transform = AugWaterbirdsCelebATransform(train)
     else:
         print(f'\n\n USING DEFAULT DATA TRANSFORM')
+        orig_w = 178
+        orig_h = 218
+        orig_min_dim = min(orig_w, orig_h)
+        if target_resolution is None:
+            target_resolution = (orig_w, orig_h)
         
         scale = 256.0 / 224.0
 
@@ -191,17 +214,16 @@ def get_transform_cub(target_resolution, train, augment_data, custom_data_transf
     return transform
 
 
-def get_loader_cub(data, train, reweight_groups, reweight_classes, reweight_places, **kwargs):
+def get_loader_celebA(data, train, reweight_groups, reweight_classes, reweight_places, **kwargs):
     batch_size = kwargs['batch_size']
     num_workers = kwargs['num_workers']
     pin_memory = kwargs['pin_memory']
-
+    print(f'before getting loader')
     loader = DataLoader(
         data,
         batch_sampler=BalancedBatchSampler(data, reweight_classes=reweight_classes, reweight_groups=reweight_groups, reweight_places=reweight_places, batch_size=batch_size),
         num_workers=num_workers,
         pin_memory=pin_memory
         )
+    print(f'after getting loader')
     return loader
-
-

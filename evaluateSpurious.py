@@ -68,8 +68,9 @@ def evaluate(config):
       scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
           optimizer, T_max=learningConfig.h2tScoreCalcPhaseEpochs)
     model.to(device)
+    #TRY BOTH using train_loader and reweighted (train_loader_rw) ---See which works best
     for epoch in range(learningConfig.h2tScoreCalcPhaseEpochs):
-      trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+      trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
     
@@ -113,7 +114,7 @@ def evaluate(config):
             optimizer, T_max=learningConfig.early_conv_epochs)
       model_early_conv.to(device)
       for epoch in range(learningConfig.early_conv_epochs): #Different epochs for early convergence phase (low since want a roughly trained outputHead)
-        trainTest.train(model_early_conv, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+        trainTest.train(model_early_conv, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
         if learningConfig.scheduler:
           scheduler.step()
           
