@@ -1,6 +1,6 @@
 import re
 from ml_collections import ConfigDict
-
+import os
 def get_config(config_string):
     print(f"\n\n\n CONFIG STRING PASSED IS {config_string} \n\n\n")
     train_batch_size = 128
@@ -36,10 +36,10 @@ def get_config(config_string):
         'spuriousConfig': ConfigDict({
             'spuriousDataset': 'Waterbirds',
             'checkpointDirectory': '', #'/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/WaterbirdsData/erm_seed1',
-            "data_dir_wb": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/cub/data/waterbird_complete95_forest2water2',
-            "test_wb_dir": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/cub/data/waterbird_complete95_forest2water2',
-            "data_dir_celebA": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/celebA/data/images_and_csv_files',
-            "test_celebA_dir": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/celebA/data/images_and_csv_files',
+            "data_dir_wb": os.path.join(os.environ.get('SLURM_TMPDIR'), 'waterbird_complete95_forest2water2/'),
+            "test_wb_dir": os.path.join(os.environ.get('SLURM_TMPDIR'), 'waterbird_complete95_forest2water2/'),
+            "data_dir_celebA": os.path.join(os.environ.get('SLURM_TMPDIR'), 'img_align_celeba/'), #Need to add /img_align_celeba/ since The path after unzipping is like /localscratch/humza245.16994749.0/img_align_celeba/img_align_celeba/196975.jpg 
+            "test_celebA_dir": os.path.join(os.environ.get('SLURM_TMPDIR'), 'img_align_celeba/'), #Need to add /img_align_celeba/ since The path after unzipping is like /localscratch/humza245.16994749.0/img_align_celeba/img_align_celeba/196975.jpg 
             "test_grey_dir": None,
             "test_places_dir": None,
             "output_dir": "/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/logs/",

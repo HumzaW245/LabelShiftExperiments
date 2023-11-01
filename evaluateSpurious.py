@@ -185,7 +185,9 @@ import argparse
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Customize configuration settings.')
     parser.add_argument('--config_string', type=str, help='Comma-separated key-value pairs to update config.')
-
+    parser.add_argument('--path', type=str, required=False, help='Path for dataset use in sh file (SLURM_TMPDIR path)')
+    parser.add_argument('--data_path', type=str, required=False, help='Data path argument description (SLURM_TMPDIR path)')
+    
     args = parser.parse_args()
 
     custom_config = args.config_string

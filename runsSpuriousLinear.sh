@@ -3,7 +3,7 @@
 #SBATCH --output=job_output.txt
 #SBATCH --error=job_error.txt
 #SBATCH --ntasks=1
-#SBATCH --time=10:00:00
+#SBATCH --time=5:00:00
 #SBATCH --mem=64Gb
 #SBATCH --account=def-eugenium 
 #SBATCH --gres=gpu:1 
@@ -12,29 +12,49 @@
 source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/torchDFRenv/bin/activate
 
 
+# note: Need to move dataset zip file to scratch first by doing e.g. scp waterbird_complete95_forest2water2.tar.gz /home/humza245/scratch
+# note: After the above, need to also move the metadata file e.g. scp metadata.csv /home/humza245/scratch
+# Then the below steps will copy from scratch to temp directory in slurm for faster running, unzip it
+# and then after copying the metadata csv within the unzipped folder (e.g. cp $SCRATCH/celeba_metadata.csv $SLURM_TMPDIR/img_align_celeba),  
+# program can then run (See examples of setups below)
+
 # Format for commands python evaluate.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
 
+
+
 #First job - Waterbirds 
-# python evaluateSpurious.py \
-# --config_string \
-# "spuriousConfig.spuriousDataset=Waterbirds,
-#  dataset=waterbirds,
-#  runTypeNameForWandB=SpuriousLin-With-DFRdoneOnValLoader,
-#  learning.useH2T=False,
-#  learning.use_early_conv_phase=False,
-#  learning.optimizer=SGD,
-#  learning.scheduler=cosine_lr_scheduler,
-#  learning.learning_rate=0.003,
-#  learning.weight_decay=0.0004,
-#  learning.epochs=40,
-#  learning.DFRepochs=5,
-#  spuriousConfig.batch_size=32, 
-#  spuriousConfig.reweight_groups=True, 
-#  spuriousConfig.pretrained_model=True, 
-#  spuriousConfig.augment_data=True,  
-#  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
-#  learning.finetune_backbones=True" &
+
+# 2. Copy your dataset on the compute node
+# IMPORTANT: Your dataset must be compressed in one single file (zip, hdf5, ...)!!!
+cp $SCRATCH/waterbird_complete95_forest2water2.tar.gz $SLURM_TMPDIR # This is for waterbirds
+
+#3. Eventually unzip your dataset
+unzip $SLURM_TMPDIR/waterbird_complete95_forest2water2.tar.gz -d $SLURM_TMPDIR # This is for waterbirds
+
+#Copy metadata to waterbird_complete95_forest2water2 with tempdir since unzipping creates 2 waterbird_complete95_forest2water2 subfolders and want metadata file to be in same path as basedir (see config.py directory configs)
+cp $SCRATCH/metadata.csv $SLURM_TMPDIR/waterbird_complete95_forest2water2
+
+
+python evaluateSpurious.py \
+--config_string \
+"spuriousConfig.spuriousDataset=Waterbirds,
+ dataset=waterbirds,
+ runTypeNameForWandB=SpuriousLin-With-DFRdoneOnValLoader,
+ learning.useH2T=False,
+ learning.use_early_conv_phase=False,
+ learning.optimizer=SGD,
+ learning.scheduler=cosine_lr_scheduler,
+ learning.learning_rate=0.003,
+ learning.weight_decay=0.0004,
+ learning.epochs=40,
+ learning.DFRepochs=5,
+ spuriousConfig.batch_size=32, 
+ spuriousConfig.reweight_groups=True, 
+ spuriousConfig.pretrained_model=True, 
+ spuriousConfig.augment_data=True,  
+ spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+ learning.finetune_backbones=True" &
 
 # BEST RESULTS Hyperparameters (wandb name of run: (LIN-BEST)waterbirds (SpuriousLin-With-DFR))
 # Test Acc AFTER DFR group 0 = 95.467 group 1 = 95.536 group 2 = 95.81 group 3 = 93.956
@@ -54,26 +74,37 @@ source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/to
 # batch_size: 32
 
 
-#Second job - CelebA 
-python evaluateSpurious.py \
---config_string \
-"spuriousConfig.spuriousDataset=CelebA,
- dataset=CelebA,
- runTypeNameForWandB=SpuriousLin-With-DFRdoneOnValLoader,
- learning.useH2T=False,
- learning.use_early_conv_phase=False,
- learning.optimizer=SGD,
- learning.scheduler=cosine_lr_scheduler,
- learning.learning_rate=0.003,
- learning.weight_decay=0.0004,
- learning.epochs=40,
- learning.DFRepochs=5,
- spuriousConfig.batch_size=32, 
- spuriousConfig.reweight_groups=True, 
- spuriousConfig.pretrained_model=True, 
- spuriousConfig.augment_data=True,  
- spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
- learning.finetune_backbones=True" &
+#Second job - CelebA (much bigger dataset so use larger batch size)
+
+# 2. Copy your dataset on the compute node
+# # IMPORTANT: Your dataset must be compressed in one single file (zip, hdf5, ...)!!!
+# cp $SCRATCH/archive.zip $SLURM_TMPDIR # This is for celebA
+
+# # 3. Eventually unzip your dataset
+# unzip $SLURM_TMPDIR/archive.zip -d $SLURM_TMPDIR # This is for celebA
+
+# Copy metadata to img_align_celeba with tempdir since unzipping creates 2 img_align_celba subfolders (See config.py 'data_dir_celebA')
+# cp $SCRATCH/celeba_metadata.csv $SLURM_TMPDIR/img_align_celeba
+
+# python evaluateSpurious.py \
+# --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
+# "spuriousConfig.spuriousDataset=CelebA,
+#  dataset=CelebA,
+#  runTypeNameForWandB=SpuriousLin-With-DFRdoneOnValLoader,
+#  learning.useH2T=False,
+#  learning.use_early_conv_phase=False,
+#  learning.optimizer=SGD,
+#  learning.scheduler=cosine_lr_scheduler,
+#  learning.learning_rate=0.003,
+#  learning.weight_decay=0.0004,
+#  learning.epochs=10,
+#  learning.DFRepochs=5,
+#  spuriousConfig.batch_size=128,
+#  spuriousConfig.reweight_groups=True, 
+#  spuriousConfig.pretrained_model=True, 
+#  spuriousConfig.augment_data=True,  
+#  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+#  learning.finetune_backbones=True" &
 
 wait
 

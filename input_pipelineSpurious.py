@@ -109,23 +109,27 @@ def getTrainTestLoaders(config):
     loader_kwargs = {'batch_size': args.batch_size, 'num_workers': 1, 'pin_memory': True}
     
     #Non reweighted so reweighting args are set to False
+    print(f'\n\n---GETTING train_loader -------------\n\n')
     train_loader = get_loader(
         trainset, train=True, reweight_groups=False,
         reweight_classes=False, reweight_places=False, **loader_kwargs)
 
     #Reweighted dataset (Only different if config is setup to use reweighting)    
+    print(f'\n\n---GETTING train_loader_rw -------------\n\n')
     train_loader_rw = get_loader(
         trainset, train=True, reweight_groups=args.reweight_groups,
         reweight_classes=args.reweight_classes, reweight_places=args.reweight_places, **loader_kwargs)
 
     test_loader_dict = {}
     for test_name, testset_v in testset_dict.items():
+        print(f'\n\n---GETTING test_loader_dict[{test_name}] -------------\n\n')
         test_loader_dict[test_name] = get_loader(
             testset_v, train=False, reweight_groups=None,
             reweight_classes=None, reweight_places=None, **loader_kwargs)
 
     test_loader_dict_rw = {}
     for test_name, testset_v in testset_dict.items():
+        print(f'\n\n---GETTING test_loader_dict_rw[{test_name}] -------------\n\n')
         test_loader_dict_rw[test_name] = get_loader(
             testset_v, train=False, reweight_groups=args.reweight_groups,
             reweight_classes=args.reweight_classes, reweight_places=args.reweight_places, **loader_kwargs)
