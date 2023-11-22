@@ -22,10 +22,20 @@ def FTBackbone(backbone, boolVal):
 
 
 #Move this to outside model...basically want to just get the final weight matrix l2 norm values since it will be score_i which can be used to determine which indices to use to train in second phase
-def getScoresAfterTrainingWithGroupLRP(device, weightsMatrix): #Weights matrix Shape is [out_features, in_features] so norm over out_features (dim = 0) since in_features are the large amount of features and out_features is the numClasses
+def getScoresAfterTrainingWithGroupLRP(device, weightsMatrix, setEarlyLayersScoreToZero): #Weights matrix Shape is [out_features, in_features] so norm over out_features (dim = 0) since in_features are the large amount of features and out_features is the numClasses
   weightsMatrix = weightsMatrix.to(device)
   w_all = weightsMatrix 
   score_i = torch.norm(w_all, p=2, dim=0) #score_i is basically a l2 norm
+
+  if setEarlyLayersScoreToZero:
+    print(f'\n\nsetEarlyLayersScoreToZero is set to True ---- Setting early layers scores to 0 \n\n')
+    print('Score tensor size:')
+    print(score_i.shape)
+    # Calculate the index representing 75% of the total elements
+    three_quarters_index = int(len(score_i) * 0.75)
+    score_i[:three_quarters_index] = 0
+    print(score_i[:100])
+    print(f'\n\n\n\n ============CAREFUL --- NOT FINISHED DEFINING setEarlyLayersScoreToZero IN getScoresAfterTrainingWithGroupLRP ')
   return score_i
 
 def getIndicesOfTopFscores(device, fraction_F, scores):
@@ -56,21 +66,39 @@ def layersForTopFPctIndicesSelected(selected_feature_indices, layersWithRangesDi
   return result  
 
 
-def getOptimizer(model, learningConfig):
-  
+def getOptimizer(model, learningConfig, use_DFR_config = False):
+  if use_DFR_config:
+    lr = learningConfig.DFR_learning_rate
+    weight_decay = learningConfig.DFR_weight_decay
+    momentum = learningConfig.DFR_momentum
+    if learningConfig.DFR_optimizer == 'adam':
+      optimizer = torch.optim.Adam(
+        model.parameters(), 
+        lr=lr, 
+        weight_decay=weight_decay
+        )
+      return optimizer
+      
+
+  else:
+    lr = learningConfig.learning_rate
+    weight_decay = learningConfig.weight_decay
+    momentum = learningConfig.momentum
+
   if learningConfig.optimizer == 'adam':
     optimizer = torch.optim.Adam(
       model.parameters(), 
-      lr=learningConfig.learning_rate, 
-      weight_decay=learningConfig.weight_decay
+      lr=lr, 
+      weight_decay=weight_decay
       )
   elif learningConfig.optimizer == 'SGD':
     optimizer = torch.optim.SGD(
       model.parameters(), 
-      lr=learningConfig.learning_rate, 
-      weight_decay=learningConfig.weight_decay, 
-      momentum=learningConfig.momentum
+      lr=lr, 
+      weight_decay=weight_decay, 
+      momentum=momentum
       )
+  
 
   else:
     raise ValueError("the config optimizer used is not supported. Needs to be defined where others are defined like SGD and adam.")

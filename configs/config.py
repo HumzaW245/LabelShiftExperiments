@@ -17,6 +17,10 @@ def get_config(config_string):
             'learning_rate': 0.001,
             'weight_decay': 0.0004,
             'momentum': 0.9,
+            'DFR_learning_rate': 0.001,
+            'DFR_weight_decay': 0.0004,
+            'DFR_momentum': 0.9,
+            'DFR_optimizer': 'SGD',
             'fraction_F': 0.1,
             'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
@@ -24,6 +28,7 @@ def get_config(config_string):
             'epochs': 20,
             'DFRepochs': 2,
             'h2tScoreCalcPhaseEpochs': 2,
+            'setEarlyLayersScoreToZero': False,
             'num_steps':999999999999, #This is at a max value since only if custom value entered, training will stop updating gradients once number of gradient updates exceeded num_steps
             'early_conv_epochs' : 2, # Early Convergence run to get roughly initialized Linear Layer
             'train_batch_size': train_batch_size,
@@ -36,8 +41,8 @@ def get_config(config_string):
         'spuriousConfig': ConfigDict({
             'spuriousDataset': 'Waterbirds',
             'checkpointDirectory': '', #'/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/WaterbirdsData/erm_seed1',
-            "data_dir_wb": os.path.join(os.environ.get('SLURM_TMPDIR'), 'waterbird_complete95_forest2water2/'),
-            "test_wb_dir": os.path.join(os.environ.get('SLURM_TMPDIR'), 'waterbird_complete95_forest2water2/'),
+            "data_dir_wb": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/cub/data/waterbird_complete95_forest2water2',
+            "test_wb_dir": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/cub/data/waterbird_complete95_forest2water2',
             "data_dir_celebA": os.path.join(os.environ.get('SLURM_TMPDIR'), 'img_align_celeba/'), #Need to add /img_align_celeba/ since The path after unzipping is like /localscratch/humza245.16994749.0/img_align_celeba/img_align_celeba/196975.jpg 
             "test_celebA_dir": os.path.join(os.environ.get('SLURM_TMPDIR'), 'img_align_celeba/'), #Need to add /img_align_celeba/ since The path after unzipping is like /localscratch/humza245.16994749.0/img_align_celeba/img_align_celeba/196975.jpg 
             "test_grey_dir": None,

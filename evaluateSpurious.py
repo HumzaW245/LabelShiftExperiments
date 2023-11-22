@@ -79,7 +79,7 @@ def evaluate(config):
 
 
     outputHeadWeights = model.getOutputHeadLayerWeights()
-    scores = helper.getScoresAfterTrainingWithGroupLRP(device, outputHeadWeights)
+    scores = helper.getScoresAfterTrainingWithGroupLRP(device, outputHeadWeights, setEarlyLayersScoreToZero = learningConfig.setEarlyLayersScoreToZero)
     print(f'This the scores matrix shape after phase 1: {scores.shape}') #Take indices of top F% and pass as indices in 2nd phase
     
     #Initializing another model and using selected_feature_indices
@@ -146,14 +146,14 @@ def evaluate(config):
     print('-----------------------------------------------DFR STARTING-------------------------------------------------------')
     
     model.setFinetuneBackbone(True)
-    print(f"\n\nFinetune of backbone has been set to False\n\n \
+    print(f"\n\nFinetune of backbone has been set to True\n\n \
           STARTING DFR Phase with reweighting set for \
           Class = {spuriousConfig.reweight_classes}, \
           Groups = {spuriousConfig.reweight_groups}, \
           Places = {spuriousConfig.reweight_places} \n\n")
     
     print(f'setting new optimizer using config.py')
-    optimizer = helper.getOptimizer(model, learningConfig)  
+    optimizer = helper.getOptimizer(model, learningConfig, use_DFR_config=True)  
     
     if learningConfig.scheduler:
       scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -162,16 +162,38 @@ def evaluate(config):
     model.to(device)      
     for epoch in range(learningConfig.DFRepochs):
 
-      # SEE Table 2 says use validation data for training(https://arxiv.org/pdf/2204.02937.pdf)
+      # # SEE Table 2 says use validation data for training(https://arxiv.org/pdf/2204.02937.pdf)
       trainTest.train(model, device, validation_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
       
-    trainTest.test(model, device, test_loader_rw)
+      trainTest.test(model, device, test_loader_rw)
     
     #Reset model num steps
     model.setNumSteps(0)
+
+  #Not using DFR so retrain on data that is not reweighted
+  else:
+    print(f'\n\n-----REWEIGHTING OF DATA IS OFF SO NOW TRAINING With FT = True ON UNBALANCED VALIDATION DATA-----\n\n')
     
+    
+    model.setFinetuneBackbone(True)
+
+    optimizer = helper.getOptimizer(model, learningConfig)
+
+    if learningConfig.scheduler:
+      scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+          optimizer, T_max=learningConfig.DFRepochs)
+    
+    model.to(device)    
+    for epoch in range(learningConfig.epochs):
+      trainTest.train(model, device, validation_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+      if learningConfig.scheduler:
+              scheduler.step()
+      trainTest.test(model, device, test_loader)
+    
+    #Reset model num steps
+    model.setNumSteps(0)
 
 
 '''
