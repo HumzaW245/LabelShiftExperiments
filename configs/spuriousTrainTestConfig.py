@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 from torch.utils.data import Subset
-
+import configs.helper as helper
 
 from torchvision import datasets, transforms
 import torch
@@ -126,7 +126,7 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
         
 
 
-def test(model, device, test_loader):
+def test(model, device, test_loader, learningConfig):
     model.eval()
     test_lossEpoch = 0
     correct = 0

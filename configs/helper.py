@@ -151,7 +151,7 @@ def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_load
     if learningConfig.scheduler:
       scheduler.step()
       
-    trainTest.test(model, device, test_loader)
+    trainTest.test(model, device, test_loader, learningConfig)
   
   #Reset model num steps
   model.setNumSteps(0)

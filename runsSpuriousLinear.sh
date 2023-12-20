@@ -40,21 +40,7 @@ source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/to
 # python evaluateSpurious.py \
 # --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 # "spuriousConfig.spuriousDataset=Waterbirds,
-#  dataset=waterbirds,
-#  runTypeNameForWandB=SpuriousLin-With-DFRdoneOnValLoader,
-#  learning.useH2T=False,
-#  learning.use_early_conv_phase=False,
-#  learning.optimizer=SGD,
-#  learning.scheduler=cosine_lr_scheduler,
-#  learning.learning_rate=0.003,
-#  learning.weight_decay=0.0004,
-#  learning.epochs=40,
-#  learning.DFRepochs=5,
-#  spuriousConfig.batch_size=32, 
-#  spuriousConfig.reweight_groups=True, 
-#  spuriousConfig.pretrained_model=True, 
-#  spuriousConfig.augment_data=True,  
-#  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+#  spurious--------fillUsingCelebA-------------------------Config.custom_data_transform=AugWaterbirdsCelebATransform, 
 #  learning.finetune_backbones=True" &
 
 # BEST RESULTS Hyperparameters (wandb name of run: (LIN-BEST)waterbirds (SpuriousLin-With-DFR))
@@ -91,7 +77,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=SpuriousLin-With-DFRdoneOnValLoader,
+ runTypeNameForWandB=SpuriousLin_Seed5,
+ spuriousConfig.seed=5,
  learning.useH2T=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,

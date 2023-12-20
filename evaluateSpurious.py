@@ -167,7 +167,7 @@ def evaluate(config):
       if learningConfig.scheduler:
         scheduler.step()
       
-      trainTest.test(model, device, test_loader_rw)
+      trainTest.test(model, device, test_loader_rw, learningConfig)
     
     #Reset model num steps
     model.setNumSteps(0)
@@ -190,7 +190,7 @@ def evaluate(config):
       trainTest.train(model, device, validation_loader, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
               scheduler.step()
-      trainTest.test(model, device, test_loader)
+      trainTest.test(model, device, test_loader, learningConfig)
     
     #Reset model num steps
     model.setNumSteps(0)
