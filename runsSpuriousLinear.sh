@@ -25,8 +25,8 @@ source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/to
 
 #First job - Waterbirds 
 
-# # 2. Copy your dataset on the compute node
-# # IMPORTANT: Your dataset must be compressed in one single file (zip, hdf5, ...)!!!
+# 2. Copy your dataset on the compute node
+# IMPORTANT: Your dataset must be compressed in one single file (zip, hdf5, ...)!!!
 # cp $SCRATCH/waterbird_complete95_forest2water2.tar.gz $SLURM_TMPDIR # This is for waterbirds
 
 # #3. Eventually unzip your dataset (use tar -xzvf if it's a tar.gz file. otherwise unzip)
@@ -53,14 +53,14 @@ source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/to
 
 
 # MATCHING RESULTS for both before and after DFR Hyperparameters (wandb name of run: (MATCH)waterbirds (SpuriousLin-With-DFR))
-#Test Acc AFTER DFR group 0 = 95.47% group 1 = 94.64% group 2 = 94.78% group 3 = 93.96%
+# Test Acc AFTER DFR group 0 = 95.47% group 1 = 94.64% group 2 = 94.78% group 3 = 93.96%
 # DFRepochs: 5
 # epochs: 40
 # learning_rate: 0.001
 # weight_decay: 0.0004
 # batch_size: 32
 
-
+'''
 #Second job - CelebA (much bigger dataset so use larger batch size)
 
 # 2. Copy your dataset on the compute node
@@ -98,6 +98,90 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True,  
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
+
+'''
+'''
+#Third job - HAM10000
+
+# 2. Copy your dataset on the compute node
+# IMPORTANT: Your dataset must be compressed in one single file (zip, hdf5, ...)!!!
+cp $SCRATCH/HAM10000.zip $SLURM_TMPDIR # This is for HAM10000 medical dataset
+
+# 3. Eventually unzip your dataset
+unzip $SLURM_TMPDIR/HAM10000.zip -d $SLURM_TMPDIR # This is for HAM10000
+
+# Copy metadata to train folder
+cp $SCRATCH/ham_metadata.csv $SLURM_TMPDIR/HAM10000/train
+#Need to copy to test folder too because of how folders are setup in data file
+cp $SCRATCH/ham_metadata.csv $SLURM_TMPDIR/HAM10000/test
+
+python evaluateSpurious.py \
+--path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
+"spuriousConfig.spuriousDataset=HAM10000,
+ dataset=HAM10000,
+ runTypeNameForWandB=SpuriousLin_Seed5,
+ spuriousConfig.seed=5,
+ learning.useH2T=False,
+ learning.use_early_conv_phase=False,
+ learning.optimizer=SGD,
+ learning.scheduler=cosine_lr_scheduler,
+ learning.learning_rate=0.0005,
+ learning.weight_decay=0.0001,
+ learning.momentum=0.9,
+ learning.DFR_learning_rate=0.0001,
+ learning.DFR_weight_decay=0.0001,
+ learning.DFR_momentum=0.4,
+ learning.DFR_optimizer=SGD,
+ learning.epochs=6,
+ learning.DFRepochs=50,
+ spuriousConfig.batch_size=128,
+ spuriousConfig.reweight_groups=True, 
+ spuriousConfig.pretrained_model=True, 
+ spuriousConfig.augment_data=True,  
+ spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+ learning.finetune_backbones=True" &
+'''
+
+#Fourth job - OL3I
+
+# 2. Copy your dataset on the compute node
+# IMPORTANT: Your dataset must be compressed in one single file (zip, hdf5, ...)!!!
+cp $SCRATCH/OL3I.zip $SLURM_TMPDIR # This is for OL3I medical dataset
+
+# 3. Eventually unzip your dataset
+unzip $SLURM_TMPDIR/OL3I.zip -d $SLURM_TMPDIR # This is for OL3I
+
+# Copy metadata file
+cp $SCRATCH/ol3i_metadata.csv $SLURM_TMPDIR/OL3I
+
+python evaluateSpurious.py \
+--path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
+"spuriousConfig.spuriousDataset=OL3I,
+ dataset=OL3I,
+ runTypeNameForWandB=SpuriousLin_Seed1,
+ spuriousConfig.seed=1,
+ learning.useH2T=False,
+ learning.use_early_conv_phase=False,
+ learning.optimizer=SGD,
+ learning.scheduler=cosine_lr_scheduler,
+ learning.learning_rate=0.0001,
+ learning.weight_decay=0.0001,
+ learning.momentum=0.9,
+ learning.DFR_learning_rate=0.0003,
+ learning.DFR_weight_decay=0.0001,
+ learning.DFR_momentum=0.7,
+ learning.DFR_optimizer=SGD,
+ learning.epochs=50,
+ learning.DFRepochs=120,
+ spuriousConfig.batch_size=128,
+ spuriousConfig.reweight_groups=True, 
+ spuriousConfig.pretrained_model=True, 
+ spuriousConfig.augment_data=True,  
+ spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+ learning.finetune_backbones=True" &
+
+
+
 
 wait
 

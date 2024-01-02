@@ -19,6 +19,12 @@ from WaterbirdsData.wb_data import WaterBirdsDataset, get_loader_cub, get_transf
 
 from CelebAData.celebA_data import CelebADataset, get_loader_celebA, get_transform_celebA
 
+from HAM10000Data.ham_data import HAM10000Dataset, get_loader_ham, get_transform_ham
+
+from OL3IData.ol3i_data import OL3IDataset, get_loader_ol3i, get_transform_ol3i
+
+
+
 from WaterbirdsData.utils import Logger, AverageMeter, set_seed, evaluate, get_y_p
 
 def getTrainTestLoaders(config):
@@ -56,6 +62,12 @@ def getTrainTestLoaders(config):
     train_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
     test_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
 
+    train_transform_ham = get_transform_ham(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+    test_transform_ham = get_transform_ham(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
+    train_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+    test_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
 
     if args.spuriousDataset == 'Waterbirds':
         basedir = args.data_dir_wb
@@ -84,6 +96,35 @@ def getTrainTestLoaders(config):
         testset_dict = {
             'wb': CelebADataset(basedir=args.test_celebA_dir, split="test", transform=test_transform_celebA),
             'wb_val': CelebADataset(basedir=args.test_celebA_dir, split="val", transform=test_transform_celebA),
+        }
+    
+    #'''
+    #Note: The source code for DFR uses place for code convenience 
+    #This naming difference is also here where we use wb and wb_val for convenience since the original code was written
+    #for waterbirds. This can be cleaned up and names of variables can be generalized later.
+    #'''
+    elif args.spuriousDataset == 'HAM10000': 
+        basedir = args.data_dir_ham
+        get_loader = get_loader_ham
+        trainset = HAM10000Dataset(basedir=basedir, split="train", transform=train_transform_ham)
+        testset_dict = {
+            'wb': HAM10000Dataset(basedir=args.test_ham_dir, split="test", transform=test_transform_ham),
+            'wb_val': HAM10000Dataset(basedir=args.test_ham_dir, split="val", transform=test_transform_ham),
+        }
+
+    
+    #'''
+    #Note: The source code for DFR uses place for code convenience 
+    #This naming difference is also here where we use wb and wb_val for convenience since the original code was written
+    #for waterbirds. This can be cleaned up and names of variables can be generalized later.
+    #'''
+    elif args.spuriousDataset == 'OL3I': 
+        basedir = args.data_dir_ol3i
+        get_loader = get_loader_ol3i
+        trainset = OL3IDataset(basedir=basedir, split="train", transform=train_transform_ol3i)
+        testset_dict = {
+            'wb': OL3IDataset(basedir=args.test_ol3i_dir, split="test", transform=test_transform_ol3i),
+            'wb_val': OL3IDataset(basedir=args.test_ol3i_dir, split="val", transform=test_transform_ol3i),
         }
 
     else:
