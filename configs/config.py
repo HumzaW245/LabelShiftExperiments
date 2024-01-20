@@ -14,6 +14,7 @@ def get_config(config_string):
             'use_early_conv_phase': False,
             'optimizer': 'SGD',
             'scheduler': "",
+            'selectRANDOMfeatures': False,
             'learning_rate': 0.001,
             'weight_decay': 0.0004,
             'momentum': 0.9,

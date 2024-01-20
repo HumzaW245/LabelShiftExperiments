@@ -38,7 +38,17 @@ def evaluate(config):
   learningConfig = config.learning
   spuriousConfig = config.spuriousConfig
 
+  #Notify in log clearly h2t will not work as intended since random features are being selected. This is for testing effectiveness of h2t
+  if learningConfig.selectRANDOMfeatures and learningConfig.useH2T:
+    print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
+    print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
+    print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
+    print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
+    print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
+    print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
+    print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
 
+    
 
 
 
@@ -83,7 +93,14 @@ def evaluate(config):
     print(f'This the scores matrix shape after phase 1: {scores.shape}') #Take indices of top F% and pass as indices in 2nd phase
     
     #Initializing another model and using selected_feature_indices
-    selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
+
+    #FOR Testing if feature selection from H2T is actually effective or not
+    if learningConfig.selectRANDOMfeatures:
+      selected_feature_indices = helper.getIndicesOfRandomFscores(device, learningConfig.fraction_F, scores)
+    
+    #For H2T feature selection below else statement is used
+    else:  
+      selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
     newConcatLayerSize = len(selected_feature_indices)
     print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
 

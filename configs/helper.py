@@ -49,6 +49,21 @@ def getIndicesOfTopFscores(device, fraction_F, scores):
     print(f'topF percent indices = {len(topFindices)} and the indices are {topFindices}')
     return topFindices
 
+def getIndicesOfRandomFscores(device, fraction_F, scores):
+    scores = scores.to(device)
+    #print(f'IN getIndicesOfTopFscores This the scores matrix shape after phase 1: {scores.shape} and type of score is {type(scores)}') #Take indices of top F% and pass as indices in 2nd phase
+    num_elements = scores.numel()
+    k = int(fraction_F * num_elements)
+        
+    # Generate a random permutation of indices
+    random_indices = torch.randperm(num_elements)
+
+    # Select the first k indices
+    selected_indices = random_indices[:k]
+
+    print(f'random F percent indices = {len(selected_indices)} and the indices are {selected_indices}')
+    return selected_indices
+
 def layersForTopFPctIndicesSelected(selected_feature_indices, layersWithRangesDict):
   result = {}
   print("inlayers func")
@@ -61,7 +76,7 @@ def layersForTopFPctIndicesSelected(selected_feature_indices, layersWithRangesDi
       for index in selected_feature_indices:
           if start <= index <= end:
               count += 1
-      result[key] = count / len(selected_feature_indices) # % in each key
+      result[key] = count / len(selected_feature_indices) # % of features in each key (each layer)
   
   return result  
 
@@ -120,7 +135,7 @@ def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningC
   plt.xticks(range(len(keys)), keys, rotation=90)  # Set the x-axis labels
 
   plt.xlabel('Layers')  # Set the x-axis label
-  plt.ylabel('Values')  # Set the y-axis label
+  plt.ylabel('Percent of features selected by layer (featuresFromLayerX/totalFeaturesSelected)')  # Set the y-axis label
   plt.title(f'The top {learningConfig.fraction_F * 100} % features selected by layer')  # Set the title of the plot
   
   # Save the plot as an image file

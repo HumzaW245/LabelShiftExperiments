@@ -6,7 +6,7 @@
 #SBATCH --time=7:00:00
 #SBATCH --mem=64Gb
 #SBATCH --account=def-eugenium 
-#SBATCH --gres=gpu:1 
+#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 
 source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/torchDFRenv/bin/activate
@@ -60,7 +60,7 @@ source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/to
 # weight_decay: 0.0004
 # batch_size: 32
 
-'''
+
 #Second job - CelebA (much bigger dataset so use larger batch size)
 
 # 2. Copy your dataset on the compute node
@@ -99,7 +99,7 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 
-'''
+
 '''
 #Third job - HAM10000
 
@@ -119,8 +119,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=SpuriousLin_Seed5,
- spuriousConfig.seed=5,
+ runTypeNameForWandB=SpuriousLin_Seed1,
+ spuriousConfig.seed=1,
  learning.useH2T=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
@@ -128,12 +128,12 @@ python evaluateSpurious.py \
  learning.learning_rate=0.0005,
  learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0001,
- learning.DFR_weight_decay=0.0001,
- learning.DFR_momentum=0.4,
+ learning.DFR_learning_rate=0.0005,
+ learning.DFR_weight_decay=0.0004,
+ learning.DFR_momentum=0.45,
  learning.DFR_optimizer=SGD,
- learning.epochs=6,
- learning.DFRepochs=50,
+ learning.epochs=15,
+ learning.DFRepochs=100,
  spuriousConfig.batch_size=128,
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
@@ -142,6 +142,7 @@ python evaluateSpurious.py \
  learning.finetune_backbones=True" &
 '''
 
+'''
 #Fourth job - OL3I
 
 # 2. Copy your dataset on the compute node
@@ -171,8 +172,8 @@ python evaluateSpurious.py \
  learning.DFR_weight_decay=0.0001,
  learning.DFR_momentum=0.7,
  learning.DFR_optimizer=SGD,
- learning.epochs=50,
- learning.DFRepochs=120,
+ learning.epochs=10,
+ learning.DFRepochs=200,
  spuriousConfig.batch_size=128,
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
@@ -181,7 +182,7 @@ python evaluateSpurious.py \
  learning.finetune_backbones=True" &
 
 
-
+'''
 
 wait
 
