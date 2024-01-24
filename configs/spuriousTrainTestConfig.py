@@ -46,22 +46,30 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
             print(f'Did not update gradient at epoch {epoch} since max number of steps set in configuration is reached: max steps ={learningConfig.num_steps}')
             break
         model.setNumSteps(numStepsDone + 1)
-
-
-        data = batch[0] 
-        countOfDataProcessed += len(data) # For tracking since sometimes len of dataloader caused issues/inaccurate size when dividing
-        target = batch[1]
-        #------------------UNCOMMENT BELOW TO PRINT GROUP COUNTS FOR EACH BATCH DURING TRAINING-------------------
-        group = batch[2] #For spurious datasets (e.g. Waterbirds loader, index 2 and 3 have the group and place for each data point)
         
-        # group_counts = Counter(group.tolist())
-        # # Print the counts for each group in the batch
-        # print("Group Counts in Batch:")
-        # for group_value, count in group_counts.items():
-        #     print(f"Group {group_value}: {count}")
-        #------------------UNCOMMENT ABOVE TO PRINT GROUP COUNTS FOR EACH BATCH DURING TRAINING-------------------
+        #Predicting spurious feature so switch target and place (original target is batch[1])
+        if learningConfig.isPredictSpuriousFeaturePhase:
+            data = batch[0]
+            countOfDataProcessed += len(data) # For tracking since sometimes len of dataloader caused issues/inaccurate size when dividing
+            target = batch[3]
+            #------------------UNCOMMENT BELOW TO PRINT GROUP COUNTS FOR EACH BATCH DURING TRAINING-------------------
+            group = batch[2] #For spurious datasets (e.g. Waterbirds loader, index 2 and 3 have the group and place for each data point)
+            place = batch[1]
+        else: 
+            data = batch[0] 
+            countOfDataProcessed += len(data) # For tracking since sometimes len of dataloader caused issues/inaccurate size when dividing
+            target = batch[1]
+            #------------------UNCOMMENT BELOW TO PRINT GROUP COUNTS FOR EACH BATCH DURING TRAINING-------------------
+            group = batch[2] #For spurious datasets (e.g. Waterbirds loader, index 2 and 3 have the group and place for each data point)
             
-        place = batch[3]
+            # group_counts = Counter(group.tolist())
+            # # Print the counts for each group in the batch
+            # print("Group Counts in Batch:")
+            # for group_value, count in group_counts.items():
+            #     print(f"Group {group_value}: {count}")
+            #------------------UNCOMMENT ABOVE TO PRINT GROUP COUNTS FOR EACH BATCH DURING TRAINING-------------------
+            
+            place = batch[3]
         
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -136,10 +144,17 @@ def test(model, device, test_loader, learningConfig):
     startTime = datetime.datetime.now()
     with torch.no_grad():
         for batch_idx, batch in enumerate(test_loader):
-            data = batch[0]
-            target = batch[1]
-            group = batch[2]
-            place = batch[3]
+            #Predicting spurious feature so switch target and place (original target is batch[1])
+            if learningConfig.isPredictSpuriousFeaturePhase:
+                data = batch[0]
+                target = batch[3]
+                group = batch[2]
+                place = batch[1]
+            else: 
+                data = batch[0]
+                target = batch[1]
+                group = batch[2]
+                place = batch[3]
             data, target = data.to(device), target.to(device)
             
             output = model(data)

@@ -49,6 +49,9 @@ def evaluate(config):
     print("\n\n*************************************************** H2T RANDOM FEATURE SELECTION HAS BEEN TURNED ON - TURN IT OFF IF WANT TO USE H2T PROPERLY****************************************************************\n\n")
 
     
+  #This part is to ensure that we are not accidentally predicting the spurious feature. It will be set to True in the section where it needs to be used.
+  learningConfig['isPredictSpuriousFeaturePhase'] = False
+  print(f'----------------------------isPredictSpuriousFeaturePhase is set to {learningConfig.isPredictSpuriousFeaturePhase} ------------------------')
 
 
 
@@ -108,6 +111,74 @@ def evaluate(config):
     helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig)
     #print(f'\n\n The top {learningConfig.fraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
     print(f'\n\n PHASE 1 COMPLETE --- Selected features have size {selected_feature_indices.shape} and are {selected_feature_indices}')
+
+    '''
+    Phase 1.1: Removing features selected by h2t when predicting spurious feature from the features selected when predicting target value
+
+      - First predict spurious feature and get selected_spuriousFeature_indices the same way as for original target
+      - Then remove features common to both spurious and target value. selected_feature_indices = selected_feature_indices - intersection(select_feature_indices, selected_spuriousFeature_indices)
+    
+    '''
+    if learningConfig.excludeSpuriousFeatureIndices:
+      learningConfig['isPredictSpuriousFeaturePhase'] = True
+      print(f'----------------------------isPredictSpuriousFeaturePhase is set to {learningConfig.isPredictSpuriousFeaturePhase} ------------------------')
+
+      #Mimic the flow of the model used to select features when target is original value. So need to do the equivalent 'Phase 0' for spurious feature prediction.
+      custome_preTrainedModelSpurious = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = True)
+
+
+      modelSpurious = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, learningConfig.concatLayerSize, True, None, None, custome_preTrainedModelSpurious) #This modelSpurious is the initialization of phase1 to calculate scoresSpurious so we don't use finetuning in this step
+      print(f'To determine scoresSpurious and select features, this phase has finetune backbone set to {modelSpurious.finetune_backbone}')
+
+      print(f'setting new optimizer using config.py')
+      optimizer = helper.getOptimizer(modelSpurious, learningConfig)  
+      
+      if learningConfig.scheduler:
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=learningConfig.h2tScoreCalcPhaseEpochs)
+      modelSpurious.to(device)
+      #TRY BOTH using train_loader and reweighted (train_loader_rw) ---See which works best
+      for epoch in range(learningConfig.h2tScoreCalcPhaseEpochs):
+        trainTest.train(modelSpurious, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+        if learningConfig.scheduler:
+          scheduler.step()
+      
+      #Reset modelSpurious num steps
+      modelSpurious.setNumSteps(0)
+
+
+      outputHeadWeightsSpurious = modelSpurious.getOutputHeadLayerWeights()
+      scoresSpurious = helper.getScoresAfterTrainingWithGroupLRP(device, outputHeadWeightsSpurious, setEarlyLayersScoreToZero = learningConfig.setEarlyLayersScoreToZero)
+      print(f'This the scoresSpurious matrix shape after phase 1: {scoresSpurious.shape}') #Take indices of top F% and pass as indices in 2nd phase
+      
+      #Initializing another modelSpurious and using selected_spuriousFeature_indices
+
+      #FOR Testing if feature selection from H2T is actually effective or not
+      if learningConfig.selectRANDOMfeatures:
+        selected_spuriousFeature_indices = helper.getIndicesOfRandomFscores(device, learningConfig.fraction_F, scoresSpurious)
+      
+      #For H2T feature selection below else statement is used
+      else:  
+        selected_spuriousFeature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scoresSpurious)
+      newConcatLayerSize = len(selected_spuriousFeature_indices)
+      print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
+
+      layersUsedForTopFPctSpuriousIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_spuriousFeature_indices, modelSpurious.getLayersWithRangesOfIndicesAfterProcessing())
+      helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctSpuriousIndicesSelected, learningConfig, "layersUsedForTopFPctSPURIOUSIndicesSelected")
+      #print(f'\n\n The top {learningConfig.fraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
+      print(f'\n\n PHASE 1.1 COMPLETE --- Selected SPURIOUS features have size {selected_spuriousFeature_indices.shape} and are {selected_spuriousFeature_indices}')
+      
+      #Final selected features
+      selected_feature_indices = helper.removeSpuriousIndices(selected_feature_indices, selected_spuriousFeature_indices)
+      
+      #Plot selected_feature_indices after removing spurious indices
+      layersUsedForTopFPctIndicesExcludingSpurious = helper.layersForTopFPctIndicesSelected(selected_feature_indices, model.getLayersWithRangesOfIndicesAfterProcessing())
+      helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesExcludingSpurious, learningConfig, "layersUsedForTopFPctIndicesSelectedEXCLUDINGspurious")
+
+      #This part is to ensure that we are not accidentally predicting the spurious feature. It will be set to True in the section where it needs to be used.
+      learningConfig['isPredictSpuriousFeaturePhase'] = False
+      print(f'----------------------------isPredictSpuriousFeaturePhase is set to {learningConfig.isPredictSpuriousFeaturePhase} ------------------------')
+
 
 
 

@@ -15,6 +15,8 @@ def get_config(config_string):
             'optimizer': 'SGD',
             'scheduler': "",
             'selectRANDOMfeatures': False,
+            'excludeSpuriousFeatureIndices': False,
+            'isPredictSpuriousFeaturePhase': False,
             'learning_rate': 0.001,
             'weight_decay': 0.0004,
             'momentum': 0.9,

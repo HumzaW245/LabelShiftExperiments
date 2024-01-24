@@ -123,7 +123,7 @@ def getOptimizer(model, learningConfig, use_DFR_config = False):
 
 import matplotlib.pyplot as plt
 
-def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig):
+def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig, saveFigName="layersUsedForTopFPctIndicesSelected"):
   data = layersUsedForTopFPctIndicesSelected
   
   keys = list(data.keys())
@@ -139,7 +139,22 @@ def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningC
   plt.title(f'The top {learningConfig.fraction_F * 100} % features selected by layer')  # Set the title of the plot
   
   # Save the plot as an image file
-  plt.savefig('layersUsedForTopFPctIndicesSelected.png')
+  plt.savefig(saveFigName + '.png')
+
+def removeSpuriousIndices(selected_feature_indices, selected_spuriousFeature_indices):
+    device = selected_feature_indices.device
+    # Convert tensors to sets
+    feature_set = set(selected_feature_indices.cpu().numpy())
+    spurious_set = set(selected_spuriousFeature_indices.cpu().numpy())
+
+    # Calculate the set difference
+    result_set = feature_set - (feature_set & spurious_set)
+
+    # Convert the result set back to a tensor
+    result_tensor = torch.tensor(list(result_set), device=device)
+
+    return result_tensor
+
 
 def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone):
   print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {finetune_backbone}-----------------------\n\n\n")
