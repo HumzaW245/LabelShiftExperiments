@@ -25,6 +25,7 @@ def get_config(config_string):
             'DFR_momentum': 0.9,
             'DFR_optimizer': 'SGD',
             'fraction_F': 0.1,
+            'spuriousFeatFraction_F': 0.01,
             'group_lrp_regularizer_coef': 0.00001,
             'group_lrp_regularizer_r': 2., #NOT using this...these are just to specify to use L2 norm but directly did it
             'group_lrp_regularizer_p': 1., #NOT using this...these are just to specify to use L1 norm but directly did it

@@ -110,7 +110,7 @@ def evaluate(config):
     layersUsedForTopFPctIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_feature_indices, model.getLayersWithRangesOfIndicesAfterProcessing())
     helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig)
     #print(f'\n\n The top {learningConfig.fraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
-    print(f'\n\n PHASE 1 COMPLETE --- Selected features have size {selected_feature_indices.shape} and are {selected_feature_indices}')
+    print(f'\n\n PHASE 1 COMPLETE --- The top {learningConfig.fraction_F * 100} % features selected have size {selected_feature_indices.shape} and are {selected_feature_indices}')
 
     '''
     Phase 1.1: Removing features selected by h2t when predicting spurious feature from the features selected when predicting target value
@@ -155,18 +155,18 @@ def evaluate(config):
 
       #FOR Testing if feature selection from H2T is actually effective or not
       if learningConfig.selectRANDOMfeatures:
-        selected_spuriousFeature_indices = helper.getIndicesOfRandomFscores(device, learningConfig.fraction_F, scoresSpurious)
+        selected_spuriousFeature_indices = helper.getIndicesOfRandomFscores(device, learningConfig.spuriousFeatFraction_F, scoresSpurious)
       
       #For H2T feature selection below else statement is used
       else:  
-        selected_spuriousFeature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scoresSpurious)
+        selected_spuriousFeature_indices = helper.getIndicesOfTopFscores(device, learningConfig.spuriousFeatFraction_F, scoresSpurious)
       newConcatLayerSize = len(selected_spuriousFeature_indices)
       print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
 
       layersUsedForTopFPctSpuriousIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_spuriousFeature_indices, modelSpurious.getLayersWithRangesOfIndicesAfterProcessing())
       helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctSpuriousIndicesSelected, learningConfig, "layersUsedForTopFPctSPURIOUSIndicesSelected")
-      #print(f'\n\n The top {learningConfig.fraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
-      print(f'\n\n PHASE 1.1 COMPLETE --- Selected SPURIOUS features have size {selected_spuriousFeature_indices.shape} and are {selected_spuriousFeature_indices}')
+      #print(f'\n\n The top {learningConfig.spuriousFeatFraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
+      print(f'\n\n PHASE 1.1 COMPLETE --- The top {learningConfig.spuriousFeatFraction_F * 100} % SPURIOUS features selected have size {selected_spuriousFeature_indices.shape} and are {selected_spuriousFeature_indices}')
       
       #Final selected features
       selected_feature_indices = helper.removeSpuriousIndices(selected_feature_indices, selected_spuriousFeature_indices)

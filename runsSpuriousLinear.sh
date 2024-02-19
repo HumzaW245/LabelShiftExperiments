@@ -10,7 +10,7 @@
 #SBATCH --cpus-per-task=4
 
 source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/torchDFRenv/bin/activate
-
+export WANDB_MODE=offline
 
 # note: Need to move dataset zip file to scratch first by doing e.g. scp waterbird_complete95_forest2water2.tar.gz /home/humza245/scratch
 # note: After the above, need to also move the metadata file e.g. scp metadata.csv /home/humza245/scratch
@@ -60,7 +60,7 @@ source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/to
 # weight_decay: 0.0004
 # batch_size: 32
 
-
+'''
 #Second job - CelebA (much bigger dataset so use larger batch size)
 
 # 2. Copy your dataset on the compute node
@@ -98,9 +98,9 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True,  
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-
-
 '''
+
+
 #Third job - HAM10000
 
 # 2. Copy your dataset on the compute node
@@ -125,22 +125,22 @@ python evaluateSpurious.py \
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
- learning.learning_rate=0.0005,
- learning.weight_decay=0.0001,
- learning.momentum=0.9,
- learning.DFR_learning_rate=0.0005,
+ learning.learning_rate=0.0001,
+ learning.weight_decay=0.0005,
+ learning.momentum=0.4,
+ learning.DFR_learning_rate=0.00005,
  learning.DFR_weight_decay=0.0004,
- learning.DFR_momentum=0.45,
+ learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
- learning.epochs=15,
- learning.DFRepochs=100,
+ learning.epochs=100,
+ learning.DFRepochs=500,
  spuriousConfig.batch_size=128,
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
  spuriousConfig.augment_data=True,  
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-'''
+
 
 '''
 #Fourth job - OL3I
