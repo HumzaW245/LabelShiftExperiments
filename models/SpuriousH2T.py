@@ -49,12 +49,12 @@ class Net(torch.nn.Module):
         self.adaptive_pool2D = nn.AdaptiveAvgPool2d(self.targetSize)
 
         #New output head
-        targetTaskOutFeatures = n_classes
+        self.targetTaskOutFeatures = n_classes
       
         if self.inScoreCalcPhase == False: #so if in 2nd phase, incoming features is # selected_indices
-          self.newOutputHead = nn.Linear(len(self.selected_feature_indices), targetTaskOutFeatures, bias=True)  # Create a new classifier using selected features indices
+          self.newOutputHead = nn.Linear(len(self.selected_feature_indices), self.targetTaskOutFeatures, bias=True)  # Create a new classifier using selected features indices
         else:
-          self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # In Score calculation phase so using all the concatenated layers size. The weights of these will be optimized to determine important features to select
+          self.newOutputHead = nn.Linear(self.concatLayerSize, self.targetTaskOutFeatures, bias=True)  # In Score calculation phase so using all the concatenated layers size. The weights of these will be optimized to determine important features to select
 
         if custom_outputHead != None:
           #print(f'Passed custom_output head has weight {custom_outputHead.weight.data}')
@@ -245,6 +245,9 @@ class Net(torch.nn.Module):
       
     def getLayersWithRangesOfIndicesAfterProcessing(self):
       return self.layersWithRangesOfIndicesAfterProcessing
+
+    def resetClassificationLayer(self):
+       self.newOutputHead = nn.Linear(len(self.selected_feature_indices), self.targetTaskOutFeatures, bias=True)  
 
     def getNumSteps(self):
       return self.numSteps

@@ -226,14 +226,15 @@ def evaluate(config):
 
   # Linear Model
   else:
-    model = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = learningConfig.finetune_backbones)
+    model = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = True)
 
 
   # DFR Training. 
   if spuriousConfig.reweight_classes or spuriousConfig.reweight_groups or spuriousConfig.reweight_places:
     print('-----------------------------------------------DFR STARTING-------------------------------------------------------')
     
-    model.setFinetuneBackbone(True)
+    model.setFinetuneBackbone(learningConfig.useFT_DFR_Phase) # DFR Only retraining last layer if not finetuning in dfr phase
+
     print(f"\n\nFinetune of backbone has been set to True\n\n \
           STARTING DFR Phase with reweighting set for \
           Class = {spuriousConfig.reweight_classes}, \

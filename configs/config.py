@@ -11,6 +11,7 @@ def get_config(config_string):
         'runTypeNameForWandB': '(No name given to run)',
         'learning': ConfigDict({
             'useH2T': False,
+            'useFT_DFR_Phase': False, #If this is True, you can produce spuriousFT(with useH2T False) and spuriousH2T+FT(with useH2T also True). Otherwise SpuriousLin and SpuriousH2T if this is False
             'use_early_conv_phase': False,
             'optimizer': 'SGD',
             'scheduler': "",

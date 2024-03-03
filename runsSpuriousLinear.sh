@@ -10,7 +10,10 @@
 #SBATCH --cpus-per-task=4
 
 source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/torchDFRenv/bin/activate
-export WANDB_MODE=offline
+export WANDB_MODE=online
+
+#Go into wandb folder and run 'wandb sync /' to sync offline logs to online repo
+
 
 # note: Need to move dataset zip file to scratch first by doing e.g. scp waterbird_complete95_forest2water2.tar.gz /home/humza245/scratch
 # note: After the above, need to also move the metadata file e.g. scp metadata.csv /home/humza245/scratch
@@ -77,9 +80,10 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=SpuriousLin_Seed5,
- spuriousConfig.seed=5,
+ runTypeNameForWandB=FIXEDSpuriousLin_Seed1,
+ spuriousConfig.seed=1,
  learning.useH2T=False,
+ learning.useFT_DFR_Phase=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
@@ -98,9 +102,9 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True,  
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
+
+
 '''
-
-
 #Third job - HAM10000
 
 # 2. Copy your dataset on the compute node
@@ -119,21 +123,22 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=SpuriousLin_Seed1,
+ runTypeNameForWandB=FIXEDSpuriousLin_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=False,
+ learning.useFT_DFR_Phase=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
- learning.learning_rate=0.0001,
- learning.weight_decay=0.0005,
- learning.momentum=0.4,
- learning.DFR_learning_rate=0.00005,
- learning.DFR_weight_decay=0.0004,
- learning.DFR_momentum=0.9,
+ learning.learning_rate=0.0003,
+ learning.weight_decay=0.0001,
+ learning.momentum=0.9,
+ learning.DFR_learning_rate=0.0001,
+ learning.DFR_weight_decay=0.0001,
+ learning.DFR_momentum=0.4,
  learning.DFR_optimizer=SGD,
- learning.epochs=100,
- learning.DFRepochs=500,
+ learning.epochs=150,
+ learning.DFRepochs=50,
  spuriousConfig.batch_size=128,
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
@@ -162,6 +167,7 @@ python evaluateSpurious.py \
  runTypeNameForWandB=SpuriousLin_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=False,
+ learning.useFT_DFR_Phase=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,

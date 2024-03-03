@@ -10,7 +10,8 @@
 #SBATCH --cpus-per-task=4
 
 source /home/humza245/projects/def-eugenium/humza245/deep_feature_reweighting/torchDFRenv/bin/activate
-export WANDB_MODE=offline
+export WANDB_MODE=online
+#Go into wandb folder and run 'wandb sync /' to sync offline logs to online repo
 
 # Format for commands python evaluate.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
@@ -43,9 +44,10 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=(F=0.99_RWdata)SpuriousH2T_Seed1,
+ runTypeNameForWandB=FIXED(F=0.75_RWdataPh1)SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
+ learning.useFT_DFR_Phase=False,
  learning.excludeSpuriousFeatureIndices=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
@@ -94,27 +96,28 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=(F_0.90_RWdataPh1)SpuriousH2T_Seed1,
+ runTypeNameForWandB=(F_0.75_RWdataPh1)SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
+ learning.useFT_DFR_Phase=False,
  learning.excludeSpuriousFeatureIndices=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
  learning.selectRANDOMfeatures=False,
- learning.learning_rate=0.0005,
+ learning.learning_rate=0.0003,
  learning.weight_decay=0.0001,
  learning.momentum=0.9,
  learning.DFR_learning_rate=0.0001,
  learning.DFR_weight_decay=0.0001,
  learning.DFR_momentum=0.4,
  learning.DFR_optimizer=SGD,
- learning.fraction_F=0.90, 
+ learning.fraction_F=0.75, 
  learning.spuriousFeatFraction_F=0.01, 
- learning.group_lrp_regularizer_coef=0.0009,
- learning.epochs=10,
- learning.DFRepochs=150,
- learning.h2tScoreCalcPhaseEpochs=15,
+ learning.group_lrp_regularizer_coef=0.0001,
+ learning.epochs=150,
+ learning.DFRepochs=50,
+ learning.h2tScoreCalcPhaseEpochs=20,
  learning.setEarlyLayersScoreToZero=False,
  learning.early_conv_epochs=2,
  learning.target_size=512,
@@ -125,6 +128,7 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True, 
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
+
 
 
 '''
@@ -148,6 +152,7 @@ python evaluateSpurious.py \
  runTypeNameForWandB=SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
+ learning.useFT_DFR_Phase=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
