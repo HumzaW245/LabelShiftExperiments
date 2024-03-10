@@ -21,8 +21,7 @@ def evaluate(config):
 
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
-  print(device) # you will really need gpu's for this part
-
+  print(device)
 
   #Get dataloaders and n_classes ***ALSO TEST LOADERS ARE RETURNS AS DICT CONTATINING TEST AND VALIDATION LOADERS
   train_loader, train_loader_rw, test_loader_dict, test_loader_dict_rw, n_classes = pipeLine.getTrainTestLoaders(config)
@@ -92,6 +91,8 @@ def evaluate(config):
 
 
     outputHeadWeights = model.getOutputHeadLayerWeights()
+
+                                                             
     scores = helper.getScoresAfterTrainingWithGroupLRP(device, outputHeadWeights, setEarlyLayersScoreToZero = learningConfig.setEarlyLayersScoreToZero)
     print(f'This the scores matrix shape after phase 1: {scores.shape}') #Take indices of top F% and pass as indices in 2nd phase
     
@@ -106,6 +107,11 @@ def evaluate(config):
       selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
     newConcatLayerSize = len(selected_feature_indices)
     print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
+
+    #Sparsity check after 
+    print("--Using scores----SPARSITY CHECK AFTER SCORES ARE CALCULATED (Scores matrix sparsity right after selecting topFpctScores)-----------")
+    helper.printAndPlotSparsityOfSelectedFeaturesIndices(scores[selected_feature_indices], learningConfig, spuriousConfig, "ONLY Selected SCORES Matrix sparsity")
+    
 
     layersUsedForTopFPctIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_feature_indices, model.getLayersWithRangesOfIndicesAfterProcessing())
     helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig)

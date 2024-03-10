@@ -3,8 +3,8 @@
 #SBATCH --output=job_output_h2t.txt
 #SBATCH --error=job_error_h2t.txt
 #SBATCH --ntasks=1
-#SBATCH --time=12:00:00
-#SBATCH --mem=128Gb
+#SBATCH --time=20:00:00
+#SBATCH --mem=64Gb
 #SBATCH --account=def-eugenium 
 #SBATCH --gres=gpu:1 
 #SBATCH --cpus-per-task=4
@@ -26,7 +26,6 @@ export WANDB_MODE=online
 #  learning.finetune_backbones=True" &
 
 
-'''
 #Second job - CelebA 
 
 
@@ -40,11 +39,14 @@ unzip $SLURM_TMPDIR/archive.zip -d $SLURM_TMPDIR # This is for celebA
 # Copy metadata to img_align_celeba with tempdir since unzipping creates 2 img_align_celba subfolders (See config.py 'data_dir_celebA')
 cp $SCRATCH/celeba_metadata.csv $SLURM_TMPDIR/img_align_celeba
 
+#NOTE: For now, concatLayerSize may need to be set based on error. e.g. if target size is 8192, error will show that matmul is expeting 1355526 neurons incoming so set it to that
+# Target size 512 - use concatLayerSize 102406
+# Target size 8192 - use concatLayerSize 1355526  
 python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=FIXED(F=0.75_RWdataPh1)SpuriousH2T_Seed1,
+ runTypeNameForWandB=(F_0.90_regCoeff_0.00001)SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
@@ -56,16 +58,16 @@ python evaluateSpurious.py \
  learning.learning_rate=0.0005,
  learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0001,
- learning.DFR_weight_decay=0.0001,
- learning.DFR_momentum=0.4,
+ learning.DFR_learning_rate=0.0005,
+ learning.DFR_weight_decay=0.0003,
+ learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
- learning.fraction_F=0.75, 
+ learning.fraction_F=0.90, 
  learning.spuriousFeatFraction_F=0.01, 
- learning.group_lrp_regularizer_coef=0.0009,
- learning.epochs=6,
- learning.DFRepochs=50,
- learning.h2tScoreCalcPhaseEpochs=15,
+ learning.group_lrp_regularizer_coef=0.00001,
+ learning.epochs=20,
+ learning.DFRepochs=150,
+ learning.h2tScoreCalcPhaseEpochs=25,
  learning.setEarlyLayersScoreToZero=False,
  learning.early_conv_epochs=2,
  learning.target_size=512,
@@ -76,8 +78,8 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True, 
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-'''
 
+'''
 #Third job - HAM10000
 
 # 2. Copy your dataset on the compute node
@@ -96,7 +98,7 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=(F_0.75_RWdataPh1)SpuriousH2T_Seed1,
+ runTypeNameForWandB=(F_0.90_RWdataPh1)SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
@@ -108,16 +110,16 @@ python evaluateSpurious.py \
  learning.learning_rate=0.0003,
  learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0001,
+ learning.DFR_learning_rate=0.0003,
  learning.DFR_weight_decay=0.0001,
- learning.DFR_momentum=0.4,
+ learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
- learning.fraction_F=0.75, 
+ learning.fraction_F=0.90, 
  learning.spuriousFeatFraction_F=0.01, 
  learning.group_lrp_regularizer_coef=0.0001,
- learning.epochs=150,
- learning.DFRepochs=50,
- learning.h2tScoreCalcPhaseEpochs=20,
+ learning.epochs=100,
+ learning.DFRepochs=500,
+ learning.h2tScoreCalcPhaseEpochs=100,
  learning.setEarlyLayersScoreToZero=False,
  learning.early_conv_epochs=2,
  learning.target_size=512,
@@ -129,7 +131,7 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 
-
+'''
 
 '''
 

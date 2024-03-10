@@ -188,3 +188,33 @@ def getModelAfterLinearRun(config, n_classes, learningConfig, device, train_load
   return model
 
 
+def calculate_sparsity(tensorUsed):
+    # Count non-zero weights
+    non_zero_counts = tensorUsed.abs().gt(0).sum().item()
+
+    # Calculate total number of weights
+    total_counts= tensorUsed.numel()
+
+    # Calculate sparsity
+    sparsity = 1.0 - (non_zero_counts / total_counts)
+    
+    return non_zero_counts, total_counts, sparsity
+
+def printAndPlotSparsityOfSelectedFeaturesIndices(tensorUsed, learningConfig, spuriousConfig, saveFigName):
+  configOfFigure = f'F = {learningConfig.fraction_F}, lr = {learningConfig.learning_rate}, weight_decay = {learningConfig.weight_decay}, \n groupLRPRegularizerCoeff = {learningConfig.group_lrp_regularizer_coef} and h2tScoreCalcPhaseEpochs = {learningConfig.h2tScoreCalcPhaseEpochs}'
+  
+  # Calculate sparsity
+  non_zero_counts, total_counts, sparsity = calculate_sparsity(tensorUsed)
+  print(f"\n\n n non_zero_counts, total_counts, sparsity = {non_zero_counts}, {total_counts}, {sparsity}")
+  # Plot sparsity
+  plt.figure(figsize=(32, 16))  # Set the size of the figure
+  plt.scatter(range(len(tensorUsed)), tensorUsed.cpu().detach().numpy())
+  plt.xlabel("Index in tensor")
+  plt.ylabel("Score")
+  plt.title(f"{spuriousConfig.spuriousDataset} \n Scores for each feature selected using {configOfFigure}")  # Set the title of the plot
+  plt.show()
+
+ # Save the plot as an image file
+  plt.savefig(spuriousConfig.spuriousDataset + " - Sparsity " + configOfFigure + ".png")
+
+
