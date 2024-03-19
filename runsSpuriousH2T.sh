@@ -3,7 +3,7 @@
 #SBATCH --output=job_output_h2t.txt
 #SBATCH --error=job_error_h2t.txt
 #SBATCH --ntasks=1
-#SBATCH --time=20:00:00
+#SBATCH --time=21:00:00
 #SBATCH --mem=64Gb
 #SBATCH --account=def-eugenium 
 #SBATCH --gres=gpu:1 
@@ -15,17 +15,55 @@ export WANDB_MODE=online
 
 # Format for commands python evaluate.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
-# #First job - Waterbirds 
-# python evaluateSpurious.py \
-# --config_string \
-# "dataset=waterbirds,
-#  ru==========FillUsingCelebA================as copy initial start point=True, 
-#  spuriousConfig.pretrained_model=True, 
-#  spuriousConfig.augment_data=True, 
-#  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
-#  learning.finetune_backbones=True" &
+
+#First job - Waterbirds 
 
 
+cp $SCRATCH/waterbird_complete95_forest2water2.tar.gz $SLURM_TMPDIR # This is for waterbirds
+
+tar -xzvf $SLURM_TMPDIR/waterbird_complete95_forest2water2.tar.gz -C $SLURM_TMPDIR # This is for waterbirds
+
+cp $SCRATCH/metadata.csv $SLURM_TMPDIR/waterbird_complete95_forest2water2
+
+
+python evaluateSpurious.py \
+--path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
+"spuriousConfig.spuriousDataset=Waterbirds,
+ dataset=Waterbirds,
+ runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed1,
+ spuriousConfig.seed=1,
+ learning.useH2T=True,
+ learning.useFT_DFR_Phase=False,
+ learning.excludeSpuriousFeatureIndices=False,
+ learning.use_early_conv_phase=False,
+ learning.optimizer=SGD,
+ learning.scheduler=cosine_lr_scheduler,
+ learning.selectRANDOMfeatures=False,
+ learning.learning_rate=0.0005,
+ learning.weight_decay=0.0004,
+ learning.momentum=0.9,
+ learning.DFR_learning_rate=0.0005,
+ learning.DFR_weight_decay=0.0003,
+ learning.DFR_momentum=0.9,
+ learning.DFR_optimizer=SGD,
+ learning.fraction_F=0.05, 
+ learning.spuriousFeatFraction_F=0.01, 
+ learning.group_lrp_regularizer_coef=0.00001,
+ learning.epochs=20,
+ learning.DFRepochs=200,
+ learning.h2tScoreCalcPhaseEpochs=25,
+ learning.setEarlyLayersScoreToZero=False,
+ learning.early_conv_epochs=2,
+ learning.target_size=512,
+ learning.concatLayerSize=102406,
+ spuriousConfig.batch_size=32, 
+ spuriousConfig.reweight_groups=True, 
+ spuriousConfig.pretrained_model=True, 
+ spuriousConfig.augment_data=True, 
+ spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+ learning.finetune_backbones=True" &
+
+'''
 #Second job - CelebA 
 
 
@@ -46,7 +84,7 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=(F_0.90_regCoeff_0.00001)SpuriousH2T_Seed1,
+ runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
@@ -62,11 +100,11 @@ python evaluateSpurious.py \
  learning.DFR_weight_decay=0.0003,
  learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
- learning.fraction_F=0.90, 
+ learning.fraction_F=0.05, 
  learning.spuriousFeatFraction_F=0.01, 
  learning.group_lrp_regularizer_coef=0.00001,
  learning.epochs=20,
- learning.DFRepochs=150,
+ learning.DFRepochs=300,
  learning.h2tScoreCalcPhaseEpochs=25,
  learning.setEarlyLayersScoreToZero=False,
  learning.early_conv_epochs=2,
@@ -78,7 +116,7 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True, 
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-
+'''
 '''
 #Third job - HAM10000
 
@@ -98,7 +136,7 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=(F_0.90_RWdataPh1)SpuriousH2T_Seed1,
+ runTypeNameForWandB=(F_0.05_RWdataPh1)SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
@@ -107,14 +145,14 @@ python evaluateSpurious.py \
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
  learning.selectRANDOMfeatures=False,
- learning.learning_rate=0.0003,
- learning.weight_decay=0.0001,
+ learning.learning_rate=0.0005,
+ learning.weight_decay=0.0003,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0003,
- learning.DFR_weight_decay=0.0001,
+ learning.DFR_learning_rate=0.0005,
+ learning.DFR_weight_decay=0.0004,
  learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
- learning.fraction_F=0.90, 
+ learning.fraction_F=0.05, 
  learning.spuriousFeatFraction_F=0.01, 
  learning.group_lrp_regularizer_coef=0.0001,
  learning.epochs=100,
@@ -131,8 +169,8 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 
-'''
 
+'''
 '''
 
 #Fourth job - OL3I

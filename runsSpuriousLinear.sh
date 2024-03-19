@@ -24,27 +24,42 @@ export WANDB_MODE=online
 # Format for commands python evaluate.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
 
-
-
 #First job - Waterbirds 
 
-# 2. Copy your dataset on the compute node
-# IMPORTANT: Your dataset must be compressed in one single file (zip, hdf5, ...)!!!
-# cp $SCRATCH/waterbird_complete95_forest2water2.tar.gz $SLURM_TMPDIR # This is for waterbirds
 
-# #3. Eventually unzip your dataset (use tar -xzvf if it's a tar.gz file. otherwise unzip)
-# tar -xzvf $SLURM_TMPDIR/waterbird_complete95_forest2water2.tar.gz -d $SLURM_TMPDIR # This is for waterbirds
+cp $SCRATCH/waterbird_complete95_forest2water2.tar.gz $SLURM_TMPDIR # This is for waterbirds
 
-# #Copy metadata to waterbird_complete95_forest2water2 with tempdir since unzipping creates 2 waterbird_complete95_forest2water2 subfolders and want metadata file to be in same path as basedir (see config.py directory configs)
-# cp $SCRATCH/metadata.csv $SLURM_TMPDIR/waterbird_complete95_forest2water2
+tar -xzvf $SLURM_TMPDIR/waterbird_complete95_forest2water2.tar.gz -C $SLURM_TMPDIR # This is for waterbirds
+
+cp $SCRATCH/metadata.csv $SLURM_TMPDIR/waterbird_complete95_forest2water2
 
 
-
-# python evaluateSpurious.py \
-# --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
-# "spuriousConfig.spuriousDataset=Waterbirds,
-#  spurious--------fillUsingCelebA-------------------------Config.custom_data_transform=AugWaterbirdsCelebATransform, 
-#  learning.finetune_backbones=True" &
+python evaluateSpurious.py \
+--path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
+"spuriousConfig.spuriousDataset=Waterbirds,
+ dataset=Waterbirds,
+ runTypeNameForWandB=SpuriousLin_Seed1,
+ spuriousConfig.seed=1,
+ learning.useH2T=False,
+ learning.useFT_DFR_Phase=False,
+ learning.use_early_conv_phase=False,
+ learning.optimizer=SGD,
+ learning.scheduler=cosine_lr_scheduler,
+ learning.learning_rate=0.003,
+ learning.weight_decay=0.0004,
+ learning.momentum=0.9,
+ learning.DFR_learning_rate=0.0005,
+ learning.DFR_weight_decay=0.0001,
+ learning.DFR_momentum=0.9,
+ learning.DFR_optimizer=SGD,
+ learning.epochs=20,
+ learning.DFRepochs=100,
+ spuriousConfig.batch_size=32,
+ spuriousConfig.reweight_groups=True, 
+ spuriousConfig.pretrained_model=True, 
+ spuriousConfig.augment_data=True,  
+ spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+ learning.finetune_backbones=True" &
 
 # BEST RESULTS Hyperparameters (wandb name of run: (LIN-BEST)waterbirds (SpuriousLin-With-DFR))
 # Test Acc AFTER DFR group 0 = 95.467 group 1 = 95.536 group 2 = 95.81 group 3 = 93.956
@@ -64,6 +79,7 @@ export WANDB_MODE=online
 # batch_size: 32
 
 '''
+
 #Second job - CelebA (much bigger dataset so use larger batch size)
 
 # 2. Copy your dataset on the compute node
@@ -104,6 +120,7 @@ python evaluateSpurious.py \
  learning.finetune_backbones=True" &
 
 
+'''
 '''
 #Third job - HAM10000
 
@@ -146,7 +163,7 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 
-
+'''
 '''
 #Fourth job - OL3I
 

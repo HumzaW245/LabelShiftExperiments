@@ -46,8 +46,8 @@ def get_config(config_string):
         'spuriousConfig': ConfigDict({
             'spuriousDataset': 'Waterbirds',
             'checkpointDirectory': '', #'/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/WaterbirdsData/erm_seed1',
-            "data_dir_wb": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/cub/data/waterbird_complete95_forest2water2',
-            "test_wb_dir": '/home/humza245/projects/def-eugenium/humza245/LabelShiftExperiments/cub/data/waterbird_complete95_forest2water2',
+            "data_dir_wb": os.path.join(os.environ.get('SLURM_TMPDIR'), 'waterbird_complete95_forest2water2/'),
+            "test_wb_dir": os.path.join(os.environ.get('SLURM_TMPDIR'), 'waterbird_complete95_forest2water2/'),
             "data_dir_celebA": os.path.join(os.environ.get('SLURM_TMPDIR'), 'img_align_celeba/'), #Need to add /img_align_celeba/ since The path after unzipping is like /localscratch/humza245.16994749.0/img_align_celeba/img_align_celeba/196975.jpg 
             "test_celebA_dir": os.path.join(os.environ.get('SLURM_TMPDIR'), 'img_align_celeba/'), #Need to add /img_align_celeba/ since The path after unzipping is like /localscratch/humza245.16994749.0/img_align_celeba/img_align_celeba/196975.jpg 
             "data_dir_ham": os.path.join(os.environ.get('SLURM_TMPDIR'), 'HAM10000/'), 
