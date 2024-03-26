@@ -3,7 +3,7 @@
 #SBATCH --output=job_output.txt
 #SBATCH --error=job_error.txt
 #SBATCH --ntasks=1
-#SBATCH --time=7:00:00
+#SBATCH --time=15:00:00
 #SBATCH --mem=64Gb
 #SBATCH --account=def-eugenium 
 #SBATCH --gres=gpu:1
@@ -23,7 +23,7 @@ export WANDB_MODE=online
 
 # Format for commands python evaluate.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
-
+'''
 #First job - Waterbirds 
 
 
@@ -42,13 +42,14 @@ python evaluateSpurious.py \
  spuriousConfig.seed=1,
  learning.useH2T=False,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
  learning.learning_rate=0.003,
  learning.weight_decay=0.0004,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0005,
+ learning.DFR_learning_rate=0.0001,
  learning.DFR_weight_decay=0.0001,
  learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
@@ -77,8 +78,8 @@ python evaluateSpurious.py \
 # learning_rate: 0.001
 # weight_decay: 0.0004
 # batch_size: 32
-
 '''
+
 
 #Second job - CelebA (much bigger dataset so use larger batch size)
 
@@ -96,10 +97,11 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=FIXEDSpuriousLin_Seed1,
+ runTypeNameForWandB=SpuriousLin_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=False,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
@@ -119,9 +121,8 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 
+'''
 
-'''
-'''
 #Third job - HAM10000
 
 # 2. Copy your dataset on the compute node
@@ -140,10 +141,11 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=FIXEDSpuriousLin_Seed1,
+ runTypeNameForWandB=SpuriousLin_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=False,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
@@ -185,6 +187,7 @@ python evaluateSpurious.py \
  spuriousConfig.seed=1,
  learning.useH2T=False,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,

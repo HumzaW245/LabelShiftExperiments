@@ -218,3 +218,22 @@ def printAndPlotSparsityOfSelectedFeaturesIndices(tensorUsed, learningConfig, sp
   plt.savefig(spuriousConfig.spuriousDataset + " - Sparsity " + configOfFigure + ".png")
 
 
+def makeTrainableOnlyAffineParamOfBNlayers(model, learningConfig):
+  # Freeze parameters
+  for param in model.model.parameters():
+    param.requires_grad = False
+
+  # Unfreeze the classification linear layer
+  if learningConfig.useH2T:
+    for param in model.newOutputHead.parameters(): # In H2T, classification is done with newOutputHead Linear layer created. See SpuriousH2T.py
+      param.requires_grad = True
+  else:
+    for param in model.model.fc.parameters():
+      param.requires_grad = True
+
+  # Make BatchNorm layers trainable
+  for module in model.model.modules():
+    if isinstance(module, nn.BatchNorm2d):
+        module.weight.requires_grad = True
+        module.bias.requires_grad = True
+        module.eval()  # Freeze running statistics (mean and variance)

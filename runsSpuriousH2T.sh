@@ -14,7 +14,7 @@ export WANDB_MODE=online
 #Go into wandb folder and run 'wandb sync /' to sync offline logs to online repo
 
 # Format for commands python evaluate.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
-
+'''
 
 #First job - Waterbirds 
 
@@ -30,10 +30,11 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=Waterbirds,
  dataset=Waterbirds,
- runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed1,
+ runTypeNameForWandB=Target8192(F_0.05)SpuriousH2T_Seed1,
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.excludeSpuriousFeatureIndices=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
@@ -49,21 +50,21 @@ python evaluateSpurious.py \
  learning.fraction_F=0.05, 
  learning.spuriousFeatFraction_F=0.01, 
  learning.group_lrp_regularizer_coef=0.00001,
- learning.epochs=20,
- learning.DFRepochs=200,
+ learning.epochs=70,
+ learning.DFRepochs=500,
  learning.h2tScoreCalcPhaseEpochs=25,
  learning.setEarlyLayersScoreToZero=False,
  learning.early_conv_epochs=2,
- learning.target_size=512,
- learning.concatLayerSize=102406,
+ learning.target_size=8192,
+ learning.concatLayerSize=1355526,
  spuriousConfig.batch_size=32, 
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
  spuriousConfig.augment_data=True, 
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-
 '''
+
 #Second job - CelebA 
 
 
@@ -88,6 +89,7 @@ python evaluateSpurious.py \
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.excludeSpuriousFeatureIndices=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
@@ -116,7 +118,7 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True, 
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-'''
+
 '''
 #Third job - HAM10000
 
@@ -136,27 +138,28 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=(F_0.05_RWdataPh1)SpuriousH2T_Seed1,
- spuriousConfig.seed=1,
+ runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed5,
+ spuriousConfig.seed=5,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.excludeSpuriousFeatureIndices=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
  learning.selectRANDOMfeatures=False,
- learning.learning_rate=0.0005,
- learning.weight_decay=0.0003,
+ learning.learning_rate=0.0003,
+ learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0005,
- learning.DFR_weight_decay=0.0004,
- learning.DFR_momentum=0.9,
+ learning.DFR_learning_rate=0.0001,
+ learning.DFR_weight_decay=0.0001,
+ learning.DFR_momentum=0.4,
  learning.DFR_optimizer=SGD,
  learning.fraction_F=0.05, 
  learning.spuriousFeatFraction_F=0.01, 
  learning.group_lrp_regularizer_coef=0.0001,
- learning.epochs=100,
- learning.DFRepochs=500,
+ learning.epochs=150,
+ learning.DFRepochs=50,
  learning.h2tScoreCalcPhaseEpochs=100,
  learning.setEarlyLayersScoreToZero=False,
  learning.early_conv_epochs=2,
@@ -193,6 +196,7 @@ python evaluateSpurious.py \
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
+ learning.trainOnlyAffineParamOfBNlayers=False,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,

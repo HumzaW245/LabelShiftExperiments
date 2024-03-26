@@ -224,16 +224,26 @@ def evaluate(config):
     '''
     =============================Phase 2: model INITIALIZATION with selected features from phase 1===========================
     '''
-    # NOTE:----------TRYING WITH FT with H2T here so if better, ignore comment to the right---------- The spurious paper suggested that only retraining the last layer is effective when doing DFR
     # So always setting finetune backbones to False here
     model = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, custom_outputHead, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
     print(f'With selected features, this next phase has finetune backbone set to {model.finetune_backbone}') 
- 
+  
 
   # Linear Model
   else:
     model = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = True)
+  
+  
+  
 
+  '''
+  spuriousAffine experiments
+
+  Make Affine parameters of batch norm layers trainable
+
+  '''
+  if learningConfig.trainOnlyAffineParamOfBNlayers:   
+    helper.makeTrainableOnlyAffineParamOfBNlayers(model, learningConfig)
 
   # DFR Training. 
   if spuriousConfig.reweight_classes or spuriousConfig.reweight_groups or spuriousConfig.reweight_places:
@@ -241,7 +251,7 @@ def evaluate(config):
     
     model.setFinetuneBackbone(learningConfig.useFT_DFR_Phase) # DFR Only retraining last layer if not finetuning in dfr phase
 
-    print(f"\n\nFinetune of backbone has been set to True\n\n \
+    print(f"\n\nFinetune of backbone has been set to {learningConfig.useFT_DFR_Phase}\n\n \
           STARTING DFR Phase with reweighting set for \
           Class = {spuriousConfig.reweight_classes}, \
           Groups = {spuriousConfig.reweight_groups}, \
