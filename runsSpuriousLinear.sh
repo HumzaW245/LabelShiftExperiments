@@ -38,8 +38,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=Waterbirds,
  dataset=Waterbirds,
- runTypeNameForWandB=SpuriousLin_Seed1,
- spuriousConfig.seed=1,
+ runTypeNameForWandB=SpuriousLin_Seed6,
+ spuriousConfig.seed=6,
  learning.useH2T=False,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
@@ -61,7 +61,7 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True,  
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-
+'''
 # BEST RESULTS Hyperparameters (wandb name of run: (LIN-BEST)waterbirds (SpuriousLin-With-DFR))
 # Test Acc AFTER DFR group 0 = 95.467 group 1 = 95.536 group 2 = 95.81 group 3 = 93.956
 # DFRepochs: 5
@@ -78,7 +78,7 @@ python evaluateSpurious.py \
 # learning_rate: 0.001
 # weight_decay: 0.0004
 # batch_size: 32
-'''
+
 
 
 #Second job - CelebA (much bigger dataset so use larger batch size)
@@ -97,11 +97,11 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=SpuriousLin_Seed1,
- spuriousConfig.seed=1,
+ runTypeNameForWandB=SpuriousAffineLin_Seed6,
+ spuriousConfig.seed=6,
  learning.useH2T=False,
  learning.useFT_DFR_Phase=False,
- learning.trainOnlyAffineParamOfBNlayers=False,
+ learning.trainOnlyAffineParamOfBNlayers=True,
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,

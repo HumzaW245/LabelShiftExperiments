@@ -232,18 +232,7 @@ def evaluate(config):
   # Linear Model
   else:
     model = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = True)
-  
-  
-  
 
-  '''
-  spuriousAffine experiments
-
-  Make Affine parameters of batch norm layers trainable
-
-  '''
-  if learningConfig.trainOnlyAffineParamOfBNlayers:   
-    helper.makeTrainableOnlyAffineParamOfBNlayers(model, learningConfig)
 
   # DFR Training. 
   if spuriousConfig.reweight_classes or spuriousConfig.reweight_groups or spuriousConfig.reweight_places:
@@ -256,6 +245,16 @@ def evaluate(config):
           Class = {spuriousConfig.reweight_classes}, \
           Groups = {spuriousConfig.reweight_groups}, \
           Places = {spuriousConfig.reweight_places} \n\n")
+    
+    '''
+    spuriousAffine experiments
+
+    Make Affine parameters of batch norm layers trainable
+
+    '''
+    if learningConfig.trainOnlyAffineParamOfBNlayers:  
+      print("-------Affine parameters experiment so resetting backbone to not be trainable except for batchNorm layers' affine parameters----------") 
+      helper.makeTrainableOnlyAffineParamOfBNlayers(model, learningConfig)
     
     print(f'setting new optimizer using config.py')
     optimizer = helper.getOptimizer(model, learningConfig, use_DFR_config=True)  
