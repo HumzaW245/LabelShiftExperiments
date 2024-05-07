@@ -15,7 +15,7 @@ export WANDB_MODE=online
 
 # Format for commands python evaluate.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
-
+'''
 #First job - Waterbirds 
 
 
@@ -30,8 +30,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=Waterbirds,
  dataset=Waterbirds,
- runTypeNameForWandB=Target8192(F_0.05)SpuriousH2T_Seed8,
- spuriousConfig.seed=8,
+ runTypeNameForWandB=Target8192(F_0.05)SpuriousH2T_Seed1,
+ spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
@@ -63,7 +63,7 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True, 
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-
+'''
 '''
 #Second job - CelebA 
 
@@ -85,8 +85,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed8,
- spuriousConfig.seed=8,
+ runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed1,
+ spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
@@ -119,7 +119,7 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 '''
-'''
+
 #Third job - HAM10000
 
 # 2. Copy your dataset on the compute node
@@ -138,8 +138,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed5,
- spuriousConfig.seed=5,
+ runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed1,
+ spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
@@ -173,7 +173,7 @@ python evaluateSpurious.py \
  learning.finetune_backbones=True" &
 
 
-'''
+
 '''
 
 #Fourth job - OL3I

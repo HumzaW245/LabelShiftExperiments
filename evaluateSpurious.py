@@ -227,7 +227,8 @@ def evaluate(config):
     # So always setting finetune backbones to False here
     model = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, custom_outputHead, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
     print(f'With selected features, this next phase has finetune backbone set to {model.finetune_backbone}') 
-  
+
+
 
   # Linear Model
   else:
@@ -237,6 +238,19 @@ def evaluate(config):
   # DFR Training. 
   if spuriousConfig.reweight_classes or spuriousConfig.reweight_groups or spuriousConfig.reweight_places:
     print('-----------------------------------------------DFR STARTING-------------------------------------------------------')
+    
+    '''
+    Hyperparameter search and setting for DFR phase
+    This is essentially doing DFR on half of the validation_loader_rw and then testing it on the other half
+    based on different hyperparameters
+    '''
+    
+    helper.setBestHyperparameters(model, device, validation_loader_rw, optimizer, epoch, config, learningConfig, spuriousConfig, display=config.printTraining)
+    print('NEW HYPERPARAMETERS CHANGED AFTER TUNING')
+    print(learningConfig['DFR_learning_rate'])
+    print(learningConfig['DFR_weight_decay'])
+    print(learningConfig['DFR_momentum'])
+    print(learningConfig['DFRepochs'])
     
     model.setFinetuneBackbone(learningConfig.useFT_DFR_Phase) # DFR Only retraining last layer if not finetuning in dfr phase
 
@@ -264,6 +278,7 @@ def evaluate(config):
           optimizer, T_max=learningConfig.DFRepochs)
     
     model.to(device)      
+
     for epoch in range(learningConfig.DFRepochs):
 
       # # SEE Table 2 says use validation data for training(https://arxiv.org/pdf/2204.02937.pdf)

@@ -5,6 +5,7 @@ import models.SpuriousLinear as spuriousLinear
 import torch.nn as nn
 import torch
 import numpy as np
+from torch.utils.data import Dataset, DataLoader, BatchSampler
 def numUniqueClasses(datasetName):
 
   datasetsClasses = {'SVHN': 10, 'Flowers102': 102, 'EuroSAT': 10, 'CIFAR100': 100}
@@ -237,3 +238,89 @@ def makeTrainableOnlyAffineParamOfBNlayers(model, learningConfig):
         module.weight.requires_grad = True
         module.bias.requires_grad = True
         module.eval()  # Freeze running statistics (mean and variance)
+
+def setBestHyperparameters(model, device, validation_loader_rw, optimizer, epoch, config, learningConfig, spuriousConfig, display=True):
+
+  # Define hyperparameters to try
+  # NOTEE: First list the hyperparameters passed as arguments in .sh file so those are also being tested.
+  lr = learningConfig.DFR_learning_rate
+  w_dec = learningConfig.DFR_weight_decay
+  mom = learningConfig.DFR_momentum
+  epoch = learningConfig.DFRepochs
+
+  hyperparameters = [{'DFR_learning_rate': lr, 'DFR_weight_decay': w_dec, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.05 , 'DFR_weight_decay': w_dec * 1.05, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.5 , 'DFR_weight_decay': w_dec * 1.5, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 2 , 'DFR_weight_decay': w_dec * 2, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.05 , 'DFR_weight_decay': w_dec * 1.05, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.5 , 'DFR_weight_decay': w_dec * 1.5, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 2 , 'DFR_weight_decay': w_dec * 2, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2}]
+
+  best_accuracy = 0
+  best_WGA_accuracy = 0
+  best_hyperparameters = None
+  valid2_accuracy = 0
+  valid2_WGA = 0
+
+  'Original state of the model'
+  original_state_dict = model.state_dict()
+
+  # Loop over hyperparameters
+  for i, hyperparams in enumerate(hyperparameters):
+    
+    # Set hyperparameters
+    learningConfig['DFR_learning_rate'] = hyperparams['DFR_learning_rate']
+    learningConfig['DFR_weight_decay'] = hyperparams['DFR_weight_decay']
+    learningConfig['DFR_momentum'] = hyperparams['DFR_momentum']
+    learningConfig['DFRepochs'] = hyperparams['DFRepochs']
+
+
+
+    # Reset model weights to the original state
+    model.load_state_dict(original_state_dict)
+    
+    
+    print(f'setting new optimizer using config.py')
+    optimizer = getOptimizer(model, learningConfig, use_DFR_config=True)  
+    
+    if learningConfig.scheduler:
+      scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+          optimizer, T_max=learningConfig.DFRepochs)
+    
+    model.to(device)      
+
+    for epoch in range(learningConfig.DFRepochs):
+
+      # # SEE Table 2 says use validation data for training(https://arxiv.org/pdf/2204.02937.pdf)
+      trainTest.train_hyperparameter_search(model, device, validation_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
+      if learningConfig.scheduler:
+        scheduler.step()
+      
+    print(f'\n\nFinished training with iteration {i} of hyperparameters. Testing their accuracy now:')
+    valid2_accuracy, valid2_WGA = trainTest.test_hyperparameter_search(model, device, validation_loader_rw, learningConfig, True)
+    
+    #Reset model num steps
+    model.setNumSteps(0)
+
+
+    # Choose best hyperparameters based on valid2 accuracy
+    if valid2_WGA > best_WGA_accuracy:
+        best_WGA_accuracy = valid2_WGA
+        best_hyperparameters = hyperparams
+
+  # After choosing the best hyperparameters, retrain the model on both valid1 and valid2 data combined (i.e. validation_loader_rw)
+  #This is done after this function is done and hyperparameters have been adjusted as needed
+  # Concatenate valid1 and valid2 data
+
+  
+  # Reset model weights to the original state so model is the same as it was before entering this function
+  model.load_state_dict(original_state_dict)
+
+
+  # Set hyperparameters
+  learningConfig['DFR_learning_rate'] = best_hyperparameters['DFR_learning_rate']
+  learningConfig['DFR_weight_decay'] = best_hyperparameters['DFR_weight_decay']
+  learningConfig['DFR_momentum'] = best_hyperparameters['DFR_momentum']
+  learningConfig['DFRepochs'] = best_hyperparameters['DFRepochs']
+
+  return
