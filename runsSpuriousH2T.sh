@@ -4,7 +4,7 @@
 #SBATCH --error=job_error_h2t.txt
 #SBATCH --ntasks=1
 #SBATCH --time=21:00:00
-#SBATCH --mem=64Gb
+#SBATCH --mem=128Gb
 #SBATCH --account=def-eugenium 
 #SBATCH --gres=gpu:1 
 #SBATCH --cpus-per-task=4
@@ -151,15 +151,15 @@ python evaluateSpurious.py \
  learning.learning_rate=0.0003,
  learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0001,
- learning.DFR_weight_decay=0.0001,
- learning.DFR_momentum=0.4,
+ learning.DFR_learning_rate=0.0005,
+ learning.DFR_weight_decay=0.0004,
+ learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
  learning.fraction_F=0.05, 
  learning.spuriousFeatFraction_F=0.01, 
  learning.group_lrp_regularizer_coef=0.0001,
- learning.epochs=150,
- learning.DFRepochs=50,
+ learning.epochs=100,
+ learning.DFRepochs=500,
  learning.h2tScoreCalcPhaseEpochs=100,
  learning.setEarlyLayersScoreToZero=False,
  learning.early_conv_epochs=2,
@@ -173,8 +173,8 @@ python evaluateSpurious.py \
  learning.finetune_backbones=True" &
 
 
-
 '''
+
 
 #Fourth job - OL3I
 
@@ -200,12 +200,12 @@ python evaluateSpurious.py \
  learning.use_early_conv_phase=False,
  learning.optimizer=SGD,
  learning.scheduler=cosine_lr_scheduler,
- learning.learning_rate=0.0003,
+ learning.learning_rate=0.0001,
  learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0001,
+ learning.DFR_learning_rate=0.0003,
  learning.DFR_weight_decay=0.0001,
- learning.DFR_momentum=0.4,
+ learning.DFR_momentum=0.7,
  learning.DFR_optimizer=SGD,
  learning.fraction_F=0.56, 
  learning.group_lrp_regularizer_coef=0.0009,

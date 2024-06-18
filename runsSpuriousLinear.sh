@@ -62,6 +62,7 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 '''
+'''
 # BEST RESULTS Hyperparameters (wandb name of run: (LIN-BEST)waterbirds (SpuriousLin-With-DFR))
 # Test Acc AFTER DFR group 0 = 95.467 group 1 = 95.536 group 2 = 95.81 group 3 = 93.956
 # DFRepochs: 5
@@ -152,12 +153,12 @@ python evaluateSpurious.py \
  learning.learning_rate=0.0003,
  learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0001,
- learning.DFR_weight_decay=0.0001,
- learning.DFR_momentum=0.4,
+ learning.DFR_learning_rate=0.0005,
+ learning.DFR_weight_decay=0.0004,
+ learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
- learning.epochs=150,
- learning.DFRepochs=50,
+ learning.epochs=100,
+ learning.DFRepochs=500,
  spuriousConfig.batch_size=128,
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
@@ -165,7 +166,7 @@ python evaluateSpurious.py \
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
 
-'''
+
 '''
 #Fourth job - OL3I
 
@@ -206,7 +207,6 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True,  
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-
 
 '''
 

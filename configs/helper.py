@@ -239,7 +239,7 @@ def makeTrainableOnlyAffineParamOfBNlayers(model, learningConfig):
         module.bias.requires_grad = True
         module.eval()  # Freeze running statistics (mean and variance)
 
-def setBestHyperparameters(model, device, validation_loader_rw, optimizer, epoch, config, learningConfig, spuriousConfig, display=True):
+def setBestHyperparameters(model, device, validation_loader_rw, config, learningConfig, spuriousConfig, display=True):
 
   # Define hyperparameters to try
   # NOTEE: First list the hyperparameters passed as arguments in .sh file so those are also being tested.
