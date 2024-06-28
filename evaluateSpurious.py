@@ -244,13 +244,13 @@ def evaluate(config):
     This is essentially doing DFR on half of the validation_loader_rw and then testing it on the other half
     based on different hyperparameters
     '''
-    
-    helper.setBestHyperparameters(model, device, validation_loader_rw, config, learningConfig, spuriousConfig, display=config.printTraining)
-    print('NEW HYPERPARAMETERS CHANGED AFTER TUNING')
-    print(learningConfig['DFR_learning_rate'])
-    print(learningConfig['DFR_weight_decay'])
-    print(learningConfig['DFR_momentum'])
-    print(learningConfig['DFRepochs'])
+    if learningConfig.useH2T:
+      helper.setBestHyperparameters(model, device, validation_loader_rw, config, learningConfig, spuriousConfig, display=config.printTraining)
+      print('NEW HYPERPARAMETERS CHANGED AFTER TUNING')
+      print(learningConfig['DFR_learning_rate'])
+      print(learningConfig['DFR_weight_decay'])
+      print(learningConfig['DFR_momentum'])
+      print(learningConfig['DFRepochs'])
     
     model.setFinetuneBackbone(learningConfig.useFT_DFR_Phase) # DFR Only retraining last layer if not finetuning in dfr phase
 
