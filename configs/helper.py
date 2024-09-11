@@ -141,6 +141,7 @@ def plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningC
   
   # Save the plot as an image file
   plt.savefig(saveFigName + '.png')
+  print("saved figure for layers plot to " + saveFigName)
 
 def removeSpuriousIndices(selected_feature_indices, selected_spuriousFeature_indices):
     device = selected_feature_indices.device
@@ -251,10 +252,8 @@ def setBestHyperparameters(model, device, validation_loader_rw, config, learning
   hyperparameters = [{'DFR_learning_rate': lr, 'DFR_weight_decay': w_dec, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
                   {'DFR_learning_rate': lr * 1.05 , 'DFR_weight_decay': w_dec * 1.05, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
                   {'DFR_learning_rate': lr * 1.5 , 'DFR_weight_decay': w_dec * 1.5, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
-                  {'DFR_learning_rate': lr * 2 , 'DFR_weight_decay': w_dec * 2, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
                   {'DFR_learning_rate': lr * 1.05 , 'DFR_weight_decay': w_dec * 1.05, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2},
-                  {'DFR_learning_rate': lr * 1.5 , 'DFR_weight_decay': w_dec * 1.5, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2},
-                  {'DFR_learning_rate': lr * 2 , 'DFR_weight_decay': w_dec * 2, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2}]
+                  {'DFR_learning_rate': lr * 1.5 , 'DFR_weight_decay': w_dec * 1.5, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2}]
 
   best_accuracy = 0
   best_WGA_accuracy = 0

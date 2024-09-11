@@ -80,9 +80,9 @@ def evaluate(config):
       scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
           optimizer, T_max=learningConfig.h2tScoreCalcPhaseEpochs)
     model.to(device)
-    #TRY BOTH using train_loader and reweighted (train_loader_rw) ---See which works best
+    #Using Validation_loader_rw after workshop paper
     for epoch in range(learningConfig.h2tScoreCalcPhaseEpochs):
-      trainTest.train(model, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
+      trainTest.train(model, device, validation_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
     
@@ -114,111 +114,11 @@ def evaluate(config):
     
 
     layersUsedForTopFPctIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_feature_indices, model.getLayersWithRangesOfIndicesAfterProcessing())
-    helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig)
+    helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesSelected, learningConfig, "layersUsedForTopFPctIndicesSelected")
     #print(f'\n\n The top {learningConfig.fraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
     print(f'\n\n PHASE 1 COMPLETE --- The top {learningConfig.fraction_F * 100} % features selected have size {selected_feature_indices.shape} and are {selected_feature_indices}')
-
-    '''
-    Phase 1.1: Removing features selected by h2t when predicting spurious feature from the features selected when predicting target value
-
-      - First predict spurious feature and get selected_spuriousFeature_indices the same way as for original target
-      - Then remove features common to both spurious and target value. selected_feature_indices = selected_feature_indices - intersection(select_feature_indices, selected_spuriousFeature_indices)
     
-    '''
-    if learningConfig.excludeSpuriousFeatureIndices:
-      learningConfig['isPredictSpuriousFeaturePhase'] = True
-      print(f'----------------------------isPredictSpuriousFeaturePhase is set to {learningConfig.isPredictSpuriousFeaturePhase} ------------------------')
-
-      #Mimic the flow of the model used to select features when target is original value. So need to do the equivalent 'Phase 0' for spurious feature prediction.
-      custome_preTrainedModelSpurious = helper.getModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone = True)
-
-
-      modelSpurious = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, learningConfig.concatLayerSize, True, None, None, custome_preTrainedModelSpurious) #This modelSpurious is the initialization of phase1 to calculate scoresSpurious so we don't use finetuning in this step
-      print(f'To determine scoresSpurious and select features, this phase has finetune backbone set to {modelSpurious.finetune_backbone}')
-
-      print(f'setting new optimizer using config.py')
-      optimizer = helper.getOptimizer(modelSpurious, learningConfig)  
-      
-      if learningConfig.scheduler:
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=learningConfig.h2tScoreCalcPhaseEpochs)
-      modelSpurious.to(device)
-      #TRY BOTH using train_loader and reweighted (train_loader_rw) ---See which works best
-      for epoch in range(learningConfig.h2tScoreCalcPhaseEpochs):
-        trainTest.train(modelSpurious, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
-        if learningConfig.scheduler:
-          scheduler.step()
-      
-      #Reset modelSpurious num steps
-      modelSpurious.setNumSteps(0)
-
-
-      outputHeadWeightsSpurious = modelSpurious.getOutputHeadLayerWeights()
-      scoresSpurious = helper.getScoresAfterTrainingWithGroupLRP(device, outputHeadWeightsSpurious, setEarlyLayersScoreToZero = learningConfig.setEarlyLayersScoreToZero)
-      print(f'This the scoresSpurious matrix shape after phase 1: {scoresSpurious.shape}') #Take indices of top F% and pass as indices in 2nd phase
-      
-      #Initializing another modelSpurious and using selected_spuriousFeature_indices
-
-      #FOR Testing if feature selection from H2T is actually effective or not
-      if learningConfig.selectRANDOMfeatures:
-        selected_spuriousFeature_indices = helper.getIndicesOfRandomFscores(device, learningConfig.spuriousFeatFraction_F, scoresSpurious)
-      
-      #For H2T feature selection below else statement is used
-      else:  
-        selected_spuriousFeature_indices = helper.getIndicesOfTopFscores(device, learningConfig.spuriousFeatFraction_F, scoresSpurious)
-      newConcatLayerSize = len(selected_spuriousFeature_indices)
-      print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
-
-      layersUsedForTopFPctSpuriousIndicesSelected = helper.layersForTopFPctIndicesSelected(selected_spuriousFeature_indices, modelSpurious.getLayersWithRangesOfIndicesAfterProcessing())
-      helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctSpuriousIndicesSelected, learningConfig, "layersUsedForTopFPctSPURIOUSIndicesSelected")
-      #print(f'\n\n The top {learningConfig.spuriousFeatFraction_F * 100} % features selected are as below: \n \n {layersUsedForTopFPctIndicesSelected}')
-      print(f'\n\n PHASE 1.1 COMPLETE --- The top {learningConfig.spuriousFeatFraction_F * 100} % SPURIOUS features selected have size {selected_spuriousFeature_indices.shape} and are {selected_spuriousFeature_indices}')
-      
-      #Final selected features
-      selected_feature_indices = helper.removeSpuriousIndices(selected_feature_indices, selected_spuriousFeature_indices)
-      
-      #Plot selected_feature_indices after removing spurious indices
-      layersUsedForTopFPctIndicesExcludingSpurious = helper.layersForTopFPctIndicesSelected(selected_feature_indices, model.getLayersWithRangesOfIndicesAfterProcessing())
-      helper.plotLayersSelectedFeaturesPct(layersUsedForTopFPctIndicesExcludingSpurious, learningConfig, "layersUsedForTopFPctIndicesSelectedEXCLUDINGspurious")
-
-      #This part is to ensure that we are not accidentally predicting the spurious feature. It will be set to True in the section where it needs to be used.
-      learningConfig['isPredictSpuriousFeaturePhase'] = False
-      print(f'----------------------------isPredictSpuriousFeaturePhase is set to {learningConfig.isPredictSpuriousFeaturePhase} ------------------------')
-
-
-
-
-    '''
-    =============================Early Convergence Init: To get weights if want a roughly trained Linear Layer to use as initializor for Phase 2===========================
-
-    Note:Finetune backbones is set to FALSE since we dont want to alter backbone here. Just want a roughly initialized head so in final phase if there is FT, any changes in backbone params is not extreme since initialization won't be random
-    **The if condition checks if config is set to check if we have FT = TRUE because otherwise it's just a H2T experiment with no FT used to initialize another H2T experiment with no FT
-
-    '''
-
-    if learningConfig.use_early_conv_phase and learningConfig.finetune_backbones == True: 
-      model_early_conv = spuriousH2T.Net(config, n_classes, False, learningConfig.target_size, newConcatLayerSize, False, selected_feature_indices, None, custome_preTrainedModel) #FT can be T/F since H2T can be with or without FT
-      
-
-      print(f'setting new optimizer using config.py')
-      optimizer = helper.getOptimizer(model_early_conv, learningConfig)  
-      
-      if learningConfig.scheduler:
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=learningConfig.early_conv_epochs)
-      model_early_conv.to(device)
-      for epoch in range(learningConfig.early_conv_epochs): #Different epochs for early convergence phase (low since want a roughly trained outputHead)
-        trainTest.train(model_early_conv, device, train_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
-        if learningConfig.scheduler:
-          scheduler.step()
-          
-      #Reset model num steps
-      model.setNumSteps(0)
-
-      custom_outputHead = model_early_conv.getOutputHead()
-    
-    else:
-      custom_outputHead = None
+    custom_outputHead = None #This is in case we want a custom initialized classification layer (was initially setup to see if using roughly trained output head to initialize here before training would be effective)
 
 
     '''

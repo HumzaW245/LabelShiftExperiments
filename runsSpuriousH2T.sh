@@ -3,7 +3,7 @@
 #SBATCH --output=job_output_h2t.txt
 #SBATCH --error=job_error_h2t.txt
 #SBATCH --ntasks=1
-#SBATCH --time=21:00:00
+#SBATCH --time=30:00:00
 #SBATCH --mem=128Gb
 #SBATCH --account=def-eugenium 
 #SBATCH --gres=gpu:1 
@@ -30,8 +30,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=Waterbirds,
  dataset=Waterbirds,
- runTypeNameForWandB=Target8192(F_0.05)SpuriousH2T_Seed1,
- spuriousConfig.seed=1,
+ runTypeNameForWandB=Target8192(F_0.05)SpuriousH2T_Seed5(valRWforFeatSelect),
+ spuriousConfig.seed=5,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
@@ -80,13 +80,13 @@ cp $SCRATCH/celeba_metadata.csv $SLURM_TMPDIR/img_align_celeba
 
 #NOTE: For now, concatLayerSize may need to be set based on error. e.g. if target size is 8192, error will show that matmul is expeting 1355526 neurons incoming so set it to that
 # Target size 512 - use concatLayerSize 102406
-# Target size 8192 - use concatLayerSize 1355526  
+# Target size 8192 - use concatLayerSize 1355526
 python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CelebA,
  dataset=CelebA,
- runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed1,
- spuriousConfig.seed=1,
+ runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed5(valRWforFeatSelect),
+ spuriousConfig.seed=5,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
@@ -118,7 +118,7 @@ python evaluateSpurious.py \
  spuriousConfig.augment_data=True, 
  spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
  learning.finetune_backbones=True" &
-'''
+'''    
 
 #Third job - HAM10000
 
@@ -138,8 +138,8 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=HAM10000,
  dataset=HAM10000,
- runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed1,
- spuriousConfig.seed=1,
+ runTypeNameForWandB=(F_0.05)SpuriousH2T_Seed3(valRWforFeatSelect),
+ spuriousConfig.seed=3,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
@@ -173,8 +173,8 @@ python evaluateSpurious.py \
  learning.finetune_backbones=True" &
 
 
-'''
 
+'''
 
 #Fourth job - OL3I
 
@@ -192,7 +192,7 @@ python evaluateSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=OL3I,
  dataset=OL3I,
- runTypeNameForWandB=SpuriousH2T_Seed1,
+ runTypeNameForWandB=SpuriousH2T_Seed1(valRWforFeatSelect),
  spuriousConfig.seed=1,
  learning.useH2T=True,
  learning.useFT_DFR_Phase=False,
