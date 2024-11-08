@@ -1,5 +1,6 @@
 import torchvision.transforms as transforms
 import torch
+from transformers import BertTokenizer
 
 IMAGENET_STATS = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -32,3 +33,14 @@ class BaseWaterbirdsCelebATransform(transforms.Compose):
 class AugWaterbirdsCelebATransform(BaseWaterbirdsCelebATransform):
     def __init__(self, train):
         super().__init__(augment=train, normalize_stats=IMAGENET_STATS)
+
+
+
+
+
+
+class BertTokenizeTransform(TokenizeTransform):
+    def __init__(self, train):
+        super().__init__(
+                tokenizer=BertTokenizer.from_pretrained("bert-base-uncased"))
+        del train

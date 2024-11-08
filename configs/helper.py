@@ -1,7 +1,9 @@
 import torch
+import transformers
 import matplotlib.pyplot as plt
 import configs.spuriousTrainTestConfig as trainTest
 import models.SpuriousLinear as spuriousLinear
+import models.Bert_SpuriousLinear as bertSpuriousLinear
 import torch.nn as nn
 import torch
 import numpy as np
@@ -323,3 +325,101 @@ def setBestHyperparameters(model, device, validation_loader_rw, config, learning
   learningConfig['DFRepochs'] = best_hyperparameters['DFRepochs']
 
   return
+
+
+def _bert_replace_fc(model):
+    model.fc = model.classifier
+    delattr(model, "classifier")
+
+    def classifier(self, x):
+        return self.fc(x)
+    
+    model.classifier = types.MethodType(classifier, model)
+
+    model.base_forward = model.forward
+
+    def forward(self, x):
+        return self.base_forward(
+            input_ids=x[:, :, 0],
+            attention_mask=x[:, :, 1],
+            token_type_ids=x[:, :, 2]).logits
+
+    model.forward = types.MethodType(forward, model)
+    return model
+
+
+def bert_pretrained(output_dim):
+	return _bert_replace_fc(BertForSequenceClassification.from_pretrained(
+            'bert-base-uncased', num_labels=output_dim))
+
+#For BERT based experiments (from https://github.com/izmailovpavel/spurious_feature_learning/blob/main/optimizers/__init__.py) 
+def bert_lr_scheduler(optimizer, num_steps):
+    return transformers.get_scheduler(
+        "linear", optimizer=optimizer, num_warmup_steps=0,
+        num_training_steps=num_steps)
+
+#For BERT based experiments (from https://github.com/izmailovpavel/spurious_feature_learning/blob/main/optimizers/__init__.py) 
+def bert_adamw_optimizer(model, learningConfig, use_DFR_config = False):
+    if use_DFR_config:
+      lr = learningConfig.DFR_learning_rate
+      weight_decay = learningConfig.DFR_weight_decay
+      momentum = learningConfig.DFR_momentum
+    else:
+      lr = learningConfig.learning_rate
+      weight_decay = learningConfig.weight_decay
+      momentum = learningConfig.momentum
+    
+    # Adapted from https://github.com/facebookresearch/BalancingGroups/blob/main/models.py
+    del momentum
+    no_decay = ["bias", "LayerNorm.weight"]
+    decay_params = []
+    nodecay_params = []
+    for n, p in model.named_parameters():
+        if not any(nd in n for nd in no_decay):
+            decay_params.append(p)
+        else:
+            nodecay_params.append(p)
+
+    optimizer_grouped_parameters = [
+        {
+            "params": decay_params,
+            "weight_decay": weight_decay,
+        },
+        {
+            "params": nodecay_params,
+            "weight_decay": 0.0,
+        },
+    ]
+    optimizer = transformers.AdamW(
+        optimizer_grouped_parameters,
+        lr=lr,
+        eps=1e-8)
+    return optimizer        
+
+def getBERTModelAfterLinearRun(config, n_classes, learningConfig, device, train_loader, test_loader, finetune_backbone):
+  print(f"\n\n\nUSING -------------- LINEAR MODEL with FT = {finetune_backbone}-----------------------\n\n\n")
+  model = bertSpuriousLinear.Net(config, n_classes, finetune_backbone)
+      
+  '''
+  Using the initialized linear model, the code below will do the first 
+  phase of training on the unbalanced dataset. 
+  '''
+  print(f'setting new optimizer using config.py')
+  optimizer = helper.bert_adamw_optimizer(model, learningConfig)  
+    
+  if learningConfig.scheduler:
+    print("USING BERT_LR_SCHEDULER")
+    scheduler = helper.bert_lr_scheduler(optimizer, learningConfig.epochs)
+
+  
+  model.to(device)
+  print(f"\n\n\n Device is: {device} \n\n\n")
+  
+
+  for epoch in range(learningConfig.epochs):
+    trainTest.train(model, device, train_loader, optimizer, epoch, learningConfig, display=config.printTraining)
+    if learningConfig.scheduler:
+      scheduler.step()
+      
+    trainTest.test(model, device, test_loader, learningConfig)
+  return model
