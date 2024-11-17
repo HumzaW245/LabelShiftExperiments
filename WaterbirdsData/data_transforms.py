@@ -35,12 +35,3 @@ class AugWaterbirdsCelebATransform(BaseWaterbirdsCelebATransform):
         super().__init__(augment=train, normalize_stats=IMAGENET_STATS)
 
 
-
-
-
-
-class BertTokenizeTransform(TokenizeTransform):
-    def __init__(self, train):
-        super().__init__(
-                tokenizer=BertTokenizer.from_pretrained("bert-base-uncased"))
-        del train

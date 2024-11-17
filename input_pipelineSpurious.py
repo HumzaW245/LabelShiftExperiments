@@ -23,9 +23,11 @@ from HAM10000Data.ham_data import HAM10000Dataset, get_loader_ham, get_transform
 
 from OL3IData.ol3i_data import OL3IDataset, get_loader_ol3i, get_transform_ol3i
 
-
+from CivilCommentsData.civil_data import WildsCivilCommentsCoarse, get_loader_civil, get_transform_civil
 
 from WaterbirdsData.utils import Logger, AverageMeter, set_seed, evaluate, get_y_p
+
+
 
 def getTrainTestLoaders(config):
 
@@ -67,6 +69,9 @@ def getTrainTestLoaders(config):
 
     train_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
     test_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
+    train_transform_civil = get_transform_civil(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+    test_transform_civil = get_transform_civil(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
 
 
     if args.spuriousDataset == 'Waterbirds':
@@ -125,6 +130,14 @@ def getTrainTestLoaders(config):
         testset_dict = {
             'wb': OL3IDataset(basedir=args.test_ol3i_dir, split="test", transform=test_transform_ol3i),
             'wb_val': OL3IDataset(basedir=args.test_ol3i_dir, split="val", transform=test_transform_ol3i),
+        }
+    elif args.spuriousDataset == 'CivilComments': 
+        basedir = args.data_dir_civil
+        get_loader = get_loader_civil
+        trainset = WildsCivilCommentsCoarse(basedir=basedir, split="train", transform=train_transform_civil)
+        testset_dict = {
+            'wb': WildsCivilCommentsCoarse(basedir=args.test_civil_dir, split="test", transform=test_transform_civil),
+            'wb_val': WildsCivilCommentsCoarse(basedir=args.test_civil_dir, split="val", transform=test_transform_civil),
         }
 
     else:

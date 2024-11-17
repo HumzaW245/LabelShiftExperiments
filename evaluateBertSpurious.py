@@ -9,11 +9,6 @@ import input_pipelineSpurious as pipeLine
 import configs.config as config
 import wandb
 
-
-
-
-==========================NEED TO DEFINE SCHEDULER, OPTIMIZER, AND TRANSFORM FOR BERT /Language models
-
 def evaluate(config):
   
   wandb.login()
@@ -30,7 +25,7 @@ def evaluate(config):
 
   #Get dataloaders and n_classes ***ALSO TEST LOADERS ARE RETURNS AS DICT CONTATINING TEST AND VALIDATION LOADERS
   train_loader, train_loader_rw, test_loader_dict, test_loader_dict_rw, n_classes = pipeLine.getTrainTestLoaders(config)
-  
+  assert False
   #For test and validation, using a separate balanced dataset to get test accuracy after DFR phase
   test_loader = test_loader_dict['wb']
   validation_loader = test_loader_dict['wb_val']
@@ -81,10 +76,8 @@ def evaluate(config):
     print(f'This the scores matrix shape after phase 1: {scores.shape}') #Take indices of top F% and pass as indices in 2nd phase
     
     #Initializing another model and using selected_feature_indices
-
-    #For H2T feature selection below else statement is used
-    else:  
-      selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
+  
+    selected_feature_indices = helper.getIndicesOfTopFscores(device, learningConfig.fraction_F, scores)
     newConcatLayerSize = len(selected_feature_indices)
     print(f'New concat layer with selected features will have {newConcatLayerSize} incoming features ')
 
