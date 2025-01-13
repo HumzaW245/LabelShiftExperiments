@@ -55,26 +55,14 @@ def getTrainTestLoaders(config):
 
     splits = ["train", "test", "val"]
 
-    # Data
-    target_resolution = (224, 224)
-    train_transform_wb = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-    test_transform_wb = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-
-
-    train_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-    test_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-
-    train_transform_ham = get_transform_ham(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-    test_transform_ham = get_transform_ham(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-
-    train_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-    test_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-
-    train_transform_civil = get_transform_civil(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-    test_transform_civil = get_transform_civil(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
-
 
     if args.spuriousDataset == 'Waterbirds':
+        
+        # Data
+        target_resolution = (224, 224)
+        train_transform_wb = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+        test_transform_wb = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
         basedir = args.data_dir_wb
         get_loader = get_loader_cub
         trainset = WaterBirdsDataset(basedir=basedir, split="train", transform=train_transform_wb)
@@ -95,6 +83,11 @@ def getTrainTestLoaders(config):
     #for waterbirds. This can be cleaned up and names of variables can be generalized later.
     #'''
     elif args.spuriousDataset == 'CelebA': 
+        # Data
+        target_resolution = (224, 224)
+        train_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+        test_transform_celebA = get_transform_celebA(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
         basedir = args.data_dir_celebA
         get_loader = get_loader_celebA
         trainset = CelebADataset(basedir=basedir, split="train", transform=train_transform_celebA)
@@ -109,6 +102,12 @@ def getTrainTestLoaders(config):
     #for waterbirds. This can be cleaned up and names of variables can be generalized later.
     #'''
     elif args.spuriousDataset == 'HAM10000': 
+        
+        # Data
+        target_resolution = (224, 224)
+        train_transform_ham = get_transform_ham(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+        test_transform_ham = get_transform_ham(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
         basedir = args.data_dir_ham
         get_loader = get_loader_ham
         trainset = HAM10000Dataset(basedir=basedir, split="train", transform=train_transform_ham)
@@ -124,6 +123,12 @@ def getTrainTestLoaders(config):
     #for waterbirds. This can be cleaned up and names of variables can be generalized later.
     #'''
     elif args.spuriousDataset == 'OL3I': 
+        
+        # Data
+        target_resolution = (224, 224)
+        train_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+        test_transform_ol3i = get_transform_ol3i(target_resolution=target_resolution, train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
         basedir = args.data_dir_ol3i
         get_loader = get_loader_ol3i
         trainset = OL3IDataset(basedir=basedir, split="train", transform=train_transform_ol3i)
@@ -132,6 +137,10 @@ def getTrainTestLoaders(config):
             'wb_val': OL3IDataset(basedir=args.test_ol3i_dir, split="val", transform=test_transform_ol3i),
         }
     elif args.spuriousDataset == 'CivilComments': 
+        
+        train_transform_civil = get_transform_civil(train=True, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+        test_transform_civil = get_transform_civil(train=False, augment_data=args.augment_data, custom_data_transform = args.custom_data_transform)
+
         basedir = args.data_dir_civil
         get_loader = get_loader_civil
         trainset = WildsCivilCommentsCoarse(basedir=basedir, split="train", transform=train_transform_civil)
@@ -189,4 +198,5 @@ def getTrainTestLoaders(config):
             reweight_classes=args.reweight_classes, reweight_places=args.reweight_places, **loader_kwargs)
     n_classes = trainset.n_classes
     print(f'Got all loaders')
+    print(f'train_loader size: {len(train_loader)} --- train_loader_rw size: {len(train_loader_rw)}')
     return train_loader, train_loader_rw, test_loader_dict, test_loader_dict_rw, n_classes

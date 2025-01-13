@@ -25,36 +25,39 @@ export WANDB_MODE=online
 
 
 #First job - CivilComments 
+########################MAKE SURE USING SALLOC SO cp SCRATCH, SLURM, ETC commands work
+########################MAKE SURE USING SALLOC SO cp SCRATCH, SLURM, ETC commands work
+########################MAKE SURE USING SALLOC SO cp SCRATCH, SLURM, ETC commands work
+########################MAKE SURE USING SALLOC SO cp SCRATCH, SLURM, ETC commands work
+########################MAKE SURE USING SALLOC SO cp SCRATCH, SLURM, ETC commands work
+########################MAKE SURE USING SALLOC SO cp SCRATCH, SLURM, ETC commands work
 
-
-cp $SCRATCH/CivilComments $SLURM_TMPDIR 
+cp $SCRATCH/all_data_with_identities.csv $SLURM_TMPDIR
 
 python evaluateBertSpurious.py \
 --path $SLURM_TMPDIR --data_path $SLURM_TMPDIR --config_string \
 "spuriousConfig.spuriousDataset=CivilComments,
- dataset=Waterbirds,
+ dataset=CivilComments,
  runTypeNameForWandB=SpuriousLin_Seed6,
  spuriousConfig.seed=6,
  learning.useH2T=False,
  learning.useFT_DFR_Phase=False,
  learning.trainOnlyAffineParamOfBNlayers=False,
- learning.use_early_conv_phase=False,
- learning.optimizer=SGD,
- learning.scheduler=cosine_lr_scheduler,
- learning.learning_rate=0.003,
- learning.weight_decay=0.0004,
+ learning.scheduler=bert_lr_scheduler,
+ learning.learning_rate=0.00001,
+ learning.weight_decay=0.0001,
  learning.momentum=0.9,
- learning.DFR_learning_rate=0.0001,
+ learning.DFR_learning_rate=0.00001,
  learning.DFR_weight_decay=0.0001,
  learning.DFR_momentum=0.9,
  learning.DFR_optimizer=SGD,
- learning.epochs=20,
- learning.DFRepochs=100,
- spuriousConfig.batch_size=32,
+ learning.epochs=1,
+ learning.DFRepochs=1,
+ spuriousConfig.batch_size=2,
  spuriousConfig.reweight_groups=True, 
  spuriousConfig.pretrained_model=True, 
  spuriousConfig.augment_data=True,  
- spuriousConfig.custom_data_transform=AugWaterbirdsCelebATransform, 
+ spuriousConfig.custom_data_transform=BertTokenizeTransform, 
  learning.finetune_backbones=True" &
 
 

@@ -8,6 +8,7 @@ import numpy as np
 import input_pipelineSpurious as pipeLine
 import configs.config as config
 import wandb
+import copy
 
 def evaluate(config):
   
@@ -25,13 +26,19 @@ def evaluate(config):
 
   #Get dataloaders and n_classes ***ALSO TEST LOADERS ARE RETURNS AS DICT CONTATINING TEST AND VALIDATION LOADERS
   train_loader, train_loader_rw, test_loader_dict, test_loader_dict_rw, n_classes = pipeLine.getTrainTestLoaders(config)
-  assert False
+  train_loader2, train_loader_rw2, test_loader_dict2, test_loader_dict_rw2, n_classes = pipeLine.getTrainTestLoaders(config)
+  
   #For test and validation, using a separate balanced dataset to get test accuracy after DFR phase
   test_loader = test_loader_dict['wb']
   validation_loader = test_loader_dict['wb_val']
 
   test_loader_rw = test_loader_dict_rw['wb']
   validation_loader_rw = test_loader_dict_rw['wb_val']
+
+  # Make a deep copy of the dictionary
+  validation_loader_rw2 = test_loader_dict_rw2['wb_val']
+
+  
 
 
   learningConfig = config.learning
@@ -64,8 +71,9 @@ def evaluate(config):
       scheduler = helper.bert_lr_scheduler(optimizer, learningConfig.h2tScoreCalcPhaseEpochs)
     model.to(device)
     #Using Validation_loader_rw after workshop paper
+    print(f'Length of validation_loader_rw is {len(validation_loader_rw)}')
     for epoch in range(learningConfig.h2tScoreCalcPhaseEpochs):
-      trainTest.train(model, device, validation_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
+      trainTest.train(model, device, validation_loader_rw2, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
     
@@ -118,7 +126,7 @@ def evaluate(config):
     based on different hyperparameters
     '''
     if learningConfig.useH2T:
-      helper.setBestHyperparameters(model, device, validation_loader_rw, config, learningConfig, spuriousConfig, display=config.printTraining)
+      helper.setBERTBestHyperparameters(model, device, validation_loader_rw, config, learningConfig, spuriousConfig, display=config.printTraining)
       print('NEW HYPERPARAMETERS CHANGED AFTER TUNING')
       print(learningConfig['DFR_learning_rate'])
       print(learningConfig['DFR_weight_decay'])
@@ -155,6 +163,14 @@ def evaluate(config):
     for epoch in range(learningConfig.DFRepochs):
 
       # # SEE Table 2 says use validation data for training(https://arxiv.org/pdf/2204.02937.pdf)
+      print(f'DFR phase train about to start with len(val_rw) = {len(validation_loader_rw)}')
+      print('DELETE UNNECESSARY PRINTS')
+      print('DELETE UNNECESSARY PRINTS')
+      print('DELETE UNNECESSARY PRINTS')
+      print('change BACK TO VAL_LOADER_RWWWWW')
+      print('change BACK TO VAL_LOADER_RWWWWW')
+      print('change BACK TO VAL_LOADER_RWWWWW')
+      print(f'Length of validation_loader_rw is {len(validation_loader_rw)}')
       trainTest.train(model, device, validation_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
       if learningConfig.scheduler:
         scheduler.step()
@@ -191,13 +207,18 @@ Executing Run (optional: with a custom config)
 import argparse
 
 if __name__ == '__main__':
+    print('STARTING PROGRAM')
+    
     parser = argparse.ArgumentParser(description='Customize configuration settings.')
     parser.add_argument('--config_string', type=str, help='Comma-separated key-value pairs to update config.')
     parser.add_argument('--path', type=str, required=False, help='Path for dataset use in sh file (SLURM_TMPDIR path)')
     parser.add_argument('--data_path', type=str, required=False, help='Data path argument description (SLURM_TMPDIR path)')
     
     args = parser.parse_args()
-
+    # Print the received arguments for debugging 
+    print(f"Config String: {args.config_string}") 
+    print(f"Path: {args.path}")
+    print(f"Data Path: {args.data_path}")
     custom_config = args.config_string
     config = config.get_config(custom_config)
 

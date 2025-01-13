@@ -49,6 +49,9 @@ import configs.helper as helper
 from transformers import BertModel, BertConfig
 from transformers import BertForSequenceClassification
 
+from typing import Dict, Iterable, Callable
+from torch import Tensor
+import math
 
 class Net(torch.nn.Module):
     def __init__(self, config, n_classes, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead, custome_preTrainedModel=None):

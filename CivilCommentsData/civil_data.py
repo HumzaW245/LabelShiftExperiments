@@ -1,25 +1,5 @@
 
 
-NEED TO DEAL WITH has_wilds PART IN CLASS BaseWildsDataset
-
-HOW TO FEED JUST THE EXCEL FILE????
-
-NEED TO DEAL WITH has_wilds PART IN CLASS BaseWildsDataset
-
-HOW TO FEED JUST THE EXCEL FILE????
-
-NEED TO DEAL WITH has_wilds PART IN CLASS BaseWildsDataset
-
-HOW TO FEED JUST THE EXCEL FILE????
-
-NEED TO DEAL WITH has_wilds PART IN CLASS BaseWildsDataset
-
-HOW TO FEED JUST THE EXCEL FILE????
-
-
-
-
-
 import os
 import numpy as np
 import pandas as pd
@@ -46,8 +26,8 @@ class BalancedBatchSampler(BatchSampler):
         self.reweight_groups = reweight_groups
         self.reweight_places = reweight_places
         self.batch_size = batch_size
-
-        self.indices_per_class, self.indices_per_group, self.indices_per_place = self._get_indices_per_X()
+        if self.reweight_groups or self.reweight_classes or self.reweight_places:
+            self.indices_per_class, self.indices_per_group, self.indices_per_place = self._get_indices_per_X()
         self.total_samples = len(self.dataset)
         self.num_batches = self.total_samples // self.batch_size
 
@@ -147,7 +127,7 @@ class BalancedBatchSampler(BatchSampler):
         return self.num_batches
 
 
-def get_transform_civil(target_resolution, train, augment_data, custom_data_transform):
+def get_transform_civil(train, augment_data, custom_data_transform):
 
     if custom_data_transform == "BertTokenizeTransform":
         print(f'\n\n USING CUSTOM DATA TRANSFORM {custom_data_transform}\n\n')
@@ -163,12 +143,14 @@ def get_loader_civil(data, train, reweight_groups, reweight_classes, reweight_pl
     num_workers = kwargs['num_workers']
     pin_memory = kwargs['pin_memory']
     print(f'before getting loader')
+    print(f'BATCH SIZE USED IN GET LOADER IS {batch_size}')
     loader = DataLoader(
         data,
         batch_sampler=BalancedBatchSampler(data, reweight_classes=reweight_classes, reweight_groups=reweight_groups, reweight_places=reweight_places, batch_size=batch_size),
         num_workers=num_workers,
         pin_memory=pin_memory
         )
+    print(len(loader))
     print(f'after getting loader')
     return loader
 
@@ -287,7 +269,7 @@ class BaseWildsDataset(SpuriousCorrelationDataset):
         self.basedir = basedir
         self.root_dir = "/".join(self.basedir.split("/")[:-2])
         base_dataset = wilds.get_dataset(
-            dataset=ds_name, download=False, root_dir=self.root_dir)
+            dataset=ds_name, download=True, root_dir=self.root_dir)
         self.dataset = base_dataset.get_subset(split, transform=transform)
 
         column_names = self.dataset.metadata_fields

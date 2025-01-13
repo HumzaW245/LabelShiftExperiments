@@ -35,17 +35,19 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
     #print(f'\n TRAINING EPOCH # {epoch}')
     #print("\n\n\n")
     #assert False
+    print(f'printing train_loader before train loop starts {train_loader}')
     for batch_idx, batch in enumerate(train_loader):
+        print(f'printing batch SHAPE in loop {batch}')
         #print(f'\n ITERATION NUMBER: {batch_idx}')
         #print(f'Time at start of iteration, INSIDE train_loader for loop by batch: {datetime.datetime.now()}')
         '''
         Exiting if number of gradient updates > num_steps configured, even if epochs not finished
         '''
-        numStepsDone = model.getNumSteps()
+        numStepsDone = 0 #model.getNumSteps()
         if numStepsDone > learningConfig.num_steps:
             print(f'Did not update gradient at epoch {epoch} since max number of steps set in configuration is reached: max steps ={learningConfig.num_steps}')
             break
-        model.setNumSteps(numStepsDone + 1)
+        #model.setNumSteps(numStepsDone + 1)
         
         #Predicting spurious feature so switch target and place (original target is batch[1])
         if learningConfig.isPredictSpuriousFeaturePhase:
@@ -109,11 +111,16 @@ def train(model, device, train_loader, optimizer, epoch, learningConfig, display
         #Wandb logging
         wandb.log({"Train Loss Per Batch": loss.item()})
         
-        # If a custom number of steps is used, only track it if not too many things to print. Meant to be used when epochs only print losses for a few epochs since number of steps max limit in config makes gradient updates stop even if num epochs is not reached
-        if learningConfig.num_steps < 5000 and numStepsDone % 10 == 0: #5000 is an arbitrary number for the threshold at which printing to console should be done
-            print(f'Train step: {numStepsDone} --- Loss = {loss.item()}')
+        # # If a custom number of steps is used, only track it if not too many things to print. Meant to be used when epochs only print losses for a few epochs since number of steps max limit in config makes gradient updates stop even if num epochs is not reached
+        # if learningConfig.num_steps < 5000 and numStepsDone % 10 == 0: #5000 is an arbitrary number for the threshold at which printing to console should be done
+        #     print(f'Train step: {numStepsDone} --- Loss = {loss.item()}')
         #torch.cuda.empty_cache() # Necessary for efficiency and cuda errors. Maybe even put somewhere in train function for each batch
-
+        print('---DELETE----*****BREAKING OUT OF THE TRAIN METHOD SO DOES NOT GO OVER ALL BATCHES---------')
+        print('---DELETE----*****BREAKING OUT OF THE TRAIN METHOD SO DOES NOT GO OVER ALL BATCHES---------')
+        print('---DELETE----*****BREAKING OUT OF THE TRAIN METHOD SO DOES NOT GO OVER ALL BATCHES---------')
+        print('-------*****BREAKING OUT OF THE TRAIN METHOD SO DOES NOT GO OVER ALL BATCHES---------')
+        print('-------*****BREAKING OUT OF THE TRAIN METHOD SO DOES NOT GO OVER ALL BATCHES---------')
+        break
     
     accuracyTrain = 100. * correct / countOfDataProcessed
     
@@ -227,11 +234,11 @@ def train_hyperparameter_search(model, device, train_loader, optimizer, epoch, l
         '''
         Exiting if number of gradient updates > num_steps configured, even if epochs not finished
         '''
-        numStepsDone = model.getNumSteps()
+        numStepsDone = 0 #model.getNumSteps()
         if numStepsDone > learningConfig.num_steps:
             print(f'Did not update gradient at epoch {epoch} since max number of steps set in configuration is reached: max steps ={learningConfig.num_steps}')
             break
-        model.setNumSteps(numStepsDone + 1)
+        #model.setNumSteps(numStepsDone + 1)
         
         #Predicting spurious feature so switch target and place (original target is batch[1])
         if learningConfig.isPredictSpuriousFeaturePhase:

@@ -1,5 +1,7 @@
 import torch
 import transformers
+from transformers import BertForSequenceClassification
+import types
 import matplotlib.pyplot as plt
 import configs.spuriousTrainTestConfig as trainTest
 import models.SpuriousLinear as spuriousLinear
@@ -405,11 +407,11 @@ def getBERTModelAfterLinearRun(config, n_classes, learningConfig, device, train_
   phase of training on the unbalanced dataset. 
   '''
   print(f'setting new optimizer using config.py')
-  optimizer = helper.bert_adamw_optimizer(model, learningConfig)  
+  optimizer = bert_adamw_optimizer(model, learningConfig)  
     
   if learningConfig.scheduler:
     print("USING BERT_LR_SCHEDULER")
-    scheduler = helper.bert_lr_scheduler(optimizer, learningConfig.epochs)
+    scheduler = bert_lr_scheduler(optimizer, learningConfig.epochs)
 
   
   model.to(device)
@@ -423,3 +425,88 @@ def getBERTModelAfterLinearRun(config, n_classes, learningConfig, device, train_
       
     trainTest.test(model, device, test_loader, learningConfig)
   return model
+
+def setBERTBestHyperparameters(model, device, validation_loader_rw, config, learningConfig, spuriousConfig, display=True):
+
+  # Define hyperparameters to try
+  # NOTEE: First list the hyperparameters passed as arguments in .sh file so those are also being tested.
+  lr = learningConfig.DFR_learning_rate
+  w_dec = learningConfig.DFR_weight_decay
+  mom = learningConfig.DFR_momentum
+  epoch = learningConfig.DFRepochs
+
+  hyperparameters = [{'DFR_learning_rate': lr, 'DFR_weight_decay': w_dec, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.05 , 'DFR_weight_decay': w_dec * 1.05, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.5 , 'DFR_weight_decay': w_dec * 1.5, 'DFR_momentum': mom, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.05 , 'DFR_weight_decay': w_dec * 1.05, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2},
+                  {'DFR_learning_rate': lr * 1.5 , 'DFR_weight_decay': w_dec * 1.5, 'DFR_momentum': mom / 2, 'DFRepochs': epoch // 2}]
+
+  best_accuracy = 0
+  best_WGA_accuracy = 0
+  best_hyperparameters = None
+  valid2_accuracy = 0
+  valid2_WGA = 0
+
+  'Original state of the model'
+  original_state_dict = model.state_dict()
+
+  # Loop over hyperparameters
+  for i, hyperparams in enumerate(hyperparameters):
+    
+    # Set hyperparameters
+    learningConfig['DFR_learning_rate'] = hyperparams['DFR_learning_rate']
+    learningConfig['DFR_weight_decay'] = hyperparams['DFR_weight_decay']
+    learningConfig['DFR_momentum'] = hyperparams['DFR_momentum']
+    learningConfig['DFRepochs'] = hyperparams['DFRepochs']
+
+
+
+    # Reset model weights to the original state
+    model.load_state_dict(original_state_dict)
+    
+    
+    print(f'setting new optimizer using config.py')
+    optimizer = bert_adamw_optimizer(model, learningConfig)   
+    
+    if learningConfig.scheduler:
+      print("USING BERT_LR_SCHEDULER")
+      scheduler = bert_lr_scheduler(optimizer, learningConfig.DFRepochs)
+      
+    model.to(device)      
+
+    for epoch in range(learningConfig.DFRepochs):
+
+      # # SEE Table 2 says use validation data for training(https://arxiv.org/pdf/2204.02937.pdf)
+      trainTest.train_hyperparameter_search(model, device, validation_loader_rw, optimizer, epoch, learningConfig, display=config.printTraining)
+      if learningConfig.scheduler:
+        scheduler.step()
+      
+    print(f'\n\nFinished training with iteration {i} of hyperparameters. Testing their accuracy now:')
+    valid2_accuracy, valid2_WGA = trainTest.test_hyperparameter_search(model, device, validation_loader_rw, learningConfig, True)
+    
+    #Reset model num steps
+    model.setNumSteps(0)
+
+
+    # Choose best hyperparameters based on valid2 accuracy
+    if valid2_WGA > best_WGA_accuracy:
+        best_WGA_accuracy = valid2_WGA
+        best_hyperparameters = hyperparams
+
+  # After choosing the best hyperparameters, retrain the model on both valid1 and valid2 data combined (i.e. validation_loader_rw)
+  #This is done after this function is done and hyperparameters have been adjusted as needed
+  # Concatenate valid1 and valid2 data
+
+  
+  # Reset model weights to the original state so model is the same as it was before entering this function
+  model.load_state_dict(original_state_dict)
+
+
+  # Set hyperparameters
+  learningConfig['DFR_learning_rate'] = best_hyperparameters['DFR_learning_rate']
+  learningConfig['DFR_weight_decay'] = best_hyperparameters['DFR_weight_decay']
+  learningConfig['DFR_momentum'] = best_hyperparameters['DFR_momentum']
+  learningConfig['DFRepochs'] = best_hyperparameters['DFRepochs']
+
+  return
+
