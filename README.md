@@ -1,5 +1,8 @@
 # LabelShiftExperiments
 
+evaluateSpurious.py serves as the main starting point of execution. Shell files explain setup and other details for executing the code with computation resources
+
+
 ABSTRACT
 Spurious correlations are a major source of errors for machine learning models, in particular
 when aiming for group-level fairness. It has been recently shown that a powerful approach to
