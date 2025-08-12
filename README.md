@@ -24,7 +24,7 @@ The code provided is in support of my thesis for the Master of Computer Science 
 
 Full thesis report is available on request to humzaw28@gmail.com
 
-Publickly available - 
+Available to public - 
 ECCV 2024 Workshop submission: https://arxiv.org/pdf/2409.14637
 The contributions of Chapter 3 of the thesis have been presented at the ECCV 2024 Fairness and ethics
 towards transparent AI: facing the chalLEnge through model Debiasing (FAILED) workshop on
