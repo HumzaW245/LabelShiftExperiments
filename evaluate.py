@@ -11,13 +11,13 @@ import wandb
 
 def evaluate(config):
   
-  #Making sure config dictionary is update to have values expected
-  print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
-
-
   wandb.login()
   #------------------------------------------------------>INITIALIZING WANDB PROJECT NAME AND NAME OF RUN <--------------------------------------------------
   wandb.init(project="Train And Test Accuracy and Losses - Pytorch", name=(config.dataset + ' (' + config.runTypeNameForWandB + ')' ) )
+
+  #Making sure config dictionary is update to have values expected
+  print(f'\n\n\nThe configuration for this run is as follows: \n {config} \n\n\n')
+
 
   use_cuda = torch.cuda.is_available()
   device = torch.device("cuda" if use_cuda else "cpu")
@@ -119,7 +119,7 @@ def evaluate(config):
 Executing Run (optional: with a custom config)
 '''
 
-#custom_config = 'learning_rate=0.1, epochs=2, train_batch_size=32, printTraining=True'
+#Use by running in command line e.g.: python evaluateSpurious.py --config_string "learning.learning_rate=0.001, learning.epochs=102, learning.train_batch_size=64, learning.finetune_backbones=False, printTraining=False"
 
 import argparse
 

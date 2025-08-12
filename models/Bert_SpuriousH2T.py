@@ -1,90 +1,108 @@
+'''
+
+see https://github.com/izmailovpavel/spurious_feature_learning/blob/main/models/text_models.py
+
+def bert_pretrained(output_dim):
+	return _bert_replace_fc(BertForSequenceClassification.from_pretrained(
+            'bert-base-uncased', num_labels=output_dim))
+
+then see how still using classifier
+
+https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/modeling_bert.py#L644
+
+class BertForSequenceClassification(BertPreTrainedModel):
+    def __init__(self, config):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+        self.config = config
+
+        self.bert = BertModel(config)
+        classifier_dropout = (
+            config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
+        )
+        self.dropout = nn.Dropout(classifier_dropout)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+
+        # Initialize weights and apply final processing
+        self.post_init()
+
+then see how https://github.com/izmailovpavel/spurious_feature_learning/blob/main/dfr_evaluate_spurious.py
+
+still set mode.fc to Identity so can replace it the way class BertForSequenceClassification(BertPreTrainedModel):
+does it. by doing self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+
+
+*****************SEE 'def forward()' for BertForSequenceClassification class,
+    can access hidden states 
+
+
+'''
+
+
+'''
+-------------------Delete all above this line once done=====================
+'''
+
 import torch
 import torch.nn as nn
 import configs.helper as helper
-import torchvision.models as models
+from transformers import BertModel, BertConfig
+from transformers import BertForSequenceClassification
 
-'''
-See example 2: https://medium.com/the-dl/how-to-use-pytorch-hooks-5041d777f904
 
-for reference on using forward hooks to get intermediate outputs
-
-'''
-
-from typing import Dict, Iterable, Callable
-from torch import Tensor
-import math
 class Net(torch.nn.Module):
-    def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead):
+    def __init__(self, config, n_classes, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead, custome_preTrainedModel=None):
         super(Net, self).__init__()
-        self.numSteps = 0
-        self.model = models.resnet50(pretrained=True)
+        
+        # Dataset
+        self.datasetName = config.dataset
 
+        spuriousConfig = config.spuriousConfig
+        
+        self.model = helper.bert_pretrained(n_classes) if custome_preTrainedModel is None else custome_preTrainedModel
+        
         self.selected_feature_indices = selected_feature_indices
         self.inScoreCalcPhase = inScoreCalcPhase
-
-        #in_features = self.model.fc.in_features #The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True) so storing the 2048 and replacing this to map from 2048 to numClasses for target task ====can see the fc layer like this: backbone = models.resnet50(pretrained=True) => print(backbone.fc)
         
-        #Target size is use for pooling of each layer, NOT the final "in_features" value of the Linear layer (output head)
-        self.targetSize = targetSize #See comment above...2048 for now used since testing with fc layer as concatenated layer (The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True))
+        # Set the dimensions for BERT's output
+        self.targetSize = self.model.config.hidden_size if targetSize is None else targetSize
+        self.concatLayerSize = self.model.config.hidden_size if concatLayerSize is None else concatLayerSize
 
-        
-        #Size of output head
-        self.concatLayerSize = concatLayerSize #See comment above...2048 for now used since testing with fc layer as concatenated layer (The fc layer of resenet50 is Linear(in_features=2048, out_features=1000, bias=True))
-
-        self.model.fc = nn.Identity()  # Replace the classifier layer with Identity since classifier will be separately applied after features chosen are extracted (See forward function)
+        self.model.fc = nn.Identity()  # Replace the pooler layer with Identity
 
         self.finetune_backbone = finetune_backbone
         helper.FTBackbone(self.model, self.finetune_backbone)
 
-        # Apply adaptive pooling to resize the tensor
-        self.adaptive_pool1D = nn.AdaptiveAvgPool1d(self.targetSize)
-        self.adaptive_pool2D = nn.AdaptiveAvgPool2d(self.targetSize)
-
-        #New output head
-        targetTaskOutFeatures = helper.numUniqueClasses(datasetName) # num of classes in target task
+        self.targetTaskOutFeatures = n_classes
       
-        if self.inScoreCalcPhase == False: #so if in 2nd phase, incoming features is # selected_indices
-          self.newOutputHead = nn.Linear(len(self.selected_feature_indices), targetTaskOutFeatures, bias=True)  # Create a new classifier
+        if self.inScoreCalcPhase == False: 
+          self.newOutputHead = nn.Linear(len(self.selected_feature_indices), self.targetTaskOutFeatures, bias=True)
         else:
-          self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
+          self.newOutputHead = nn.Linear(self.concatLayerSize, self.targetTaskOutFeatures, bias=True) 
 
-        if custom_outputHead != None:
-          #print(f'Passed custom_output head has weight {custom_outputHead.weight.data}')
+        if custom_outputHead is not None:
           with torch.no_grad():
             self.newOutputHead.weight.copy_(custom_outputHead.weight.data)
             self.newOutputHead.bias.copy_(custom_outputHead.bias.data)
 
-        #Forward hook setup to store intermediate outputs of chosen layers/features
         self._layersChosen = {}
         
-        self.layersWithRangesOfIndicesAfterProcessing = {} #This is to track which layer has which indices after flattening outputs
-
+        self.layersWithRangesOfIndicesAfterProcessing = {} 
+        
         for name, module in self.model.named_modules():
-          module.register_forward_hook(self.save_outputs_hook(name)) #Name is what the layer_id is in save_outputs_hook...usually forward hooks are not callable so just have (Self, module, input, output) but here a function with those is defined so it can call with passed argument
+          module.register_forward_hook(self.save_outputs_hook(name)) 
 
     def forward(self, x): 
-        fwdPassBeforeClassifier = self.model(x)
-        selected_features = self._layersChosen # At this point, have not gone through classifier but have all chosen features so can now pass this through a linear layer for classification (FIRST NEED TO CONCAT etc and make it passable to linear layers)
+        fwdPassBeforeClassifier = self.model(x)  # Ensure the model processes the input and stores outputs
+        selected_features = self._layersChosen 
         
-        #Concatenated Layer for classifier
-        concatenated_features = self.getConcatenatedLayer(selected_features) #This is flattening everything passed starting from dim 1 (see definition)
+        concatenated_features = self.getConcatenatedLayer(selected_features)
         
-        if self.inScoreCalcPhase == False: #So if in 2nd phase and have indices
-          #print(f'shape in 2nd phase before selecting features {concatenated_features.shape}')
-          #print(f'selected feature indices has size {self.selected_feature_indices.shape} and are {self.selected_feature_indices}')
+        if self.inScoreCalcPhase == False: 
           concatenated_features = concatenated_features[:, self.selected_feature_indices]
-          #print(f'shape in 2nd phase AFTER selecting features {concatenated_features.shape}')
         
-        #print(f'shape of concatenated layer BEFORE PASSING THROUGH OUTPUT HEAD {concatenated_features.shape}')
-        x = self.newOutputHead(concatenated_features)
-        ######################################################
-        ######################################################
-        # WILL HAVE A NEW 'CONCAT LAYER SIZE' TO ENTER IN CONFIG SINCE ONLY USED IN 2ND PHASE AND SUBSET OF FEATURES USED
-        ######################################################
-        ######################################################
-
+        x = self.newOutputHead(concatenated_features)  # Pass the concatenated features through the custom classifier
         return x
-
     '''
     Forward hooks (Basically telling upon initialization to keep track of modules specified with module.register_forward_hook) - The values being tracked are updated as forward passes are done and since we append those 'variables' to self._layersChosen, can access it always. (So after self.model(x), their values are updated and so self._layersChosen will have the updated values which we can use to build the new concatenated layer)
     
@@ -222,7 +240,7 @@ class Net(torch.nn.Module):
     def setFinetuneBackbone(self, boolVal):
       self.finetune_backbone = boolVal
       helper.FTBackbone(self.model, self.finetune_backbone)
-      
+
       
       #There is no  model.fc (set to Identity()) for h2t since output head Linear layer is separate from self.model which contains only pretrained model (backbone only)
       #So no need for below requires grad part
@@ -237,6 +255,9 @@ class Net(torch.nn.Module):
       
     def getLayersWithRangesOfIndicesAfterProcessing(self):
       return self.layersWithRangesOfIndicesAfterProcessing
+
+    def resetClassificationLayer(self):
+       self.newOutputHead = nn.Linear(len(self.selected_feature_indices), self.targetTaskOutFeatures, bias=True)  
 
     def getNumSteps(self):
       return self.numSteps

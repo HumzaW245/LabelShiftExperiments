@@ -6,6 +6,7 @@ import torchvision.models as models
 class Net(torch.nn.Module):
     def __init__(self, datasetName, finetune_backbones):
         super(Net, self).__init__()
+        self.numSteps = 0
         
         
         #False by default since this condition is specific to head2toe
@@ -19,8 +20,7 @@ class Net(torch.nn.Module):
 
         # FT backbone
         self.finetune_backbones = finetune_backbones
-        if self.finetune_backbones == False:
-          helper.freezeBackbone(self.model)
+        helper.FTBackbone(self.model, self.finetune_backbones)
           
 
         #New output head
@@ -34,3 +34,16 @@ class Net(torch.nn.Module):
     def forward(self, x):
         x = self.model(x)
         return x
+
+    def getNumSteps(self):
+      return self.numSteps
+
+    def setNumSteps(self, newVal):
+      self.numSteps = newVal
+      
+    def setFinetuneBackbone(self, boolVal):
+      self.finetune_backbones = boolVal
+      helper.FTBackbone(self.model, self.finetune_backbones)
+      
+      self.model.fc.weight.requires_grad = True
+      self.model.fc.bias.requires_grad = True

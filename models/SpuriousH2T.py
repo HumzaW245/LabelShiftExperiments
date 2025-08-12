@@ -14,10 +14,18 @@ from typing import Dict, Iterable, Callable
 from torch import Tensor
 import math
 class Net(torch.nn.Module):
-    def __init__(self, datasetName, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead):
+    def __init__(self, config, n_classes, finetune_backbone, targetSize, concatLayerSize, inScoreCalcPhase, selected_feature_indices, custom_outputHead, custome_preTrainedModel):
         super(Net, self).__init__()
         self.numSteps = 0
-        self.model = models.resnet50(pretrained=True)
+        
+        # Dataset
+        self.datasetName = config.dataset,
+
+        spuriousConfig = config.spuriousConfig
+        
+        self.model = custome_preTrainedModel #We want to use the model after finetuning for target domain dataset instead of default resnet50. This used to be just models.resnet50(pretrained=spuriousConfig.pretrained_model) 
+        
+        
 
         self.selected_feature_indices = selected_feature_indices
         self.inScoreCalcPhase = inScoreCalcPhase
@@ -41,12 +49,12 @@ class Net(torch.nn.Module):
         self.adaptive_pool2D = nn.AdaptiveAvgPool2d(self.targetSize)
 
         #New output head
-        targetTaskOutFeatures = helper.numUniqueClasses(datasetName) # num of classes in target task
+        self.targetTaskOutFeatures = n_classes
       
         if self.inScoreCalcPhase == False: #so if in 2nd phase, incoming features is # selected_indices
-          self.newOutputHead = nn.Linear(len(self.selected_feature_indices), targetTaskOutFeatures, bias=True)  # Create a new classifier
+          self.newOutputHead = nn.Linear(len(self.selected_feature_indices), self.targetTaskOutFeatures, bias=True)  # Create a new classifier using selected features indices
         else:
-          self.newOutputHead = nn.Linear(self.concatLayerSize, targetTaskOutFeatures, bias=True)  # Create a new classifier
+          self.newOutputHead = nn.Linear(self.concatLayerSize, self.targetTaskOutFeatures, bias=True)  # In Score calculation phase so using all the concatenated layers size. The weights of these will be optimized to determine important features to select
 
         if custom_outputHead != None:
           #print(f'Passed custom_output head has weight {custom_outputHead.weight.data}')
@@ -222,7 +230,7 @@ class Net(torch.nn.Module):
     def setFinetuneBackbone(self, boolVal):
       self.finetune_backbone = boolVal
       helper.FTBackbone(self.model, self.finetune_backbone)
-      
+
       
       #There is no  model.fc (set to Identity()) for h2t since output head Linear layer is separate from self.model which contains only pretrained model (backbone only)
       #So no need for below requires grad part
@@ -237,6 +245,9 @@ class Net(torch.nn.Module):
       
     def getLayersWithRangesOfIndicesAfterProcessing(self):
       return self.layersWithRangesOfIndicesAfterProcessing
+
+    def resetClassificationLayer(self):
+       self.newOutputHead = nn.Linear(len(self.selected_feature_indices), self.targetTaskOutFeatures, bias=True)  
 
     def getNumSteps(self):
       return self.numSteps
